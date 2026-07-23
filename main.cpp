@@ -15,6 +15,7 @@
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
+#include <imgui/imgui_internal.h>
 #include <vector>
 #include "SceneObject.h"
 #include "Material.h"
@@ -81,13 +82,15 @@ int main(void) {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad ;//| ImGuiConfigFlags_DockingEnable;
+	io.IniFilename = nullptr;
 	float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.FontScaleDpi = main_scale * 1.25f;
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
+
 
 
 	Shader diffuseShader("shaders/vertex.vs", "shaders/fragment.fs"); // diffuse
@@ -230,9 +233,17 @@ int main(void) {
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	while (!glfwWindowShouldClose(window)) {
+		// since we skip rendering if minimized, this function doesnt get called so we can uniminimize
+		//moved it here so that it can still do its thing 
+		glfwPollEvents();
+
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		if (width == 0 || height == 0) continue; //skip rendering this frame if minimized
 
 		cout << "fps: " << 1.0f / deltaTime << "\r";
 
@@ -241,6 +252,12 @@ int main(void) {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		// ImGui::DockSpaceOverViewport();
+		// ImGui::ShowDemoWindow();
+
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Scene", &isSceneOpen);
 		ImGui::Text("Objects");
 		if (ImGui::Button("Add Primitive")) {
@@ -269,6 +286,8 @@ int main(void) {
 		
 
 		if (sceneObjects.size() > 0) {
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(500, 200.0f), ImGuiCond_Always);
 			ImGui::Begin("Transform");
 			ImGui::Text(sceneObjects[index].name.c_str());
 			ImGui::DragFloat3("Position", glm::value_ptr(sceneObjects[index].position), 0.1f);
@@ -277,6 +296,8 @@ int main(void) {
 			
 			ImGui::End();
 
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 200.0f), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiCond_Always);
 			sceneObjects[index].material->materialSettingsPanel();
 		}
 
@@ -350,12 +371,12 @@ int main(void) {
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		glfwSwapBuffers(window);
-		glfwPollEvents();
 	}
 
 	
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyPlatformWindows();
 	ImGui::DestroyContext();
 
 	glfwTerminate();
