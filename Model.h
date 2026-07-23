@@ -6,7 +6,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "stb_image.h"
+#include "include/stb_image/stb_image.h"
 #include "Shader.h"
 #include "Mesh.h"
 using namespace std;

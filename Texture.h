@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <string>
 #include <iostream>
-#include "include/stb_image.h"
+#include "include/stb_image/stb_image.h"
 
 class Texture {
 public:

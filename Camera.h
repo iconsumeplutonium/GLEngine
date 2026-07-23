@@ -37,6 +37,30 @@ public:
 		mouseSensitivity(mouseSensitivity),
 		aspectRatio(aspectRatio) {};
 
+	void processInput(GLFWwindow* window, float deltaTime) {
+		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+			glfwSetWindowShouldClose(window, true);
+
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+			moveForward(deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+			moveBackward(deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+			moveLeft(deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+			moveRight(deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			moveUp(deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+			moveDown(deltaTime);
+		}
+	}
+
 	void moveForward(float deltaTime) {
 		eye += dir * moveSpeed * deltaTime;
 	}

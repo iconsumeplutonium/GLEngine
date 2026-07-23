@@ -9,8 +9,8 @@ set(SOURCES
 	Shader.h
 	Mesh.h
 	Model.h
-	${CMAKE_SOURCE_DIR}/include/stb_image.h
-	${CMAKE_SOURCE_DIR}/include/stb_image.cpp
+	${CMAKE_SOURCE_DIR}/include/stb_image/stb_image.h
+	${CMAKE_SOURCE_DIR}/include/stb_image/stb_image.cpp
     ${CMAKE_SOURCE_DIR}/include/glad/glad.c
     ${CMAKE_SOURCE_DIR}/include/imgui/imgui.cpp
     ${CMAKE_SOURCE_DIR}/include/imgui/imgui_draw.cpp
