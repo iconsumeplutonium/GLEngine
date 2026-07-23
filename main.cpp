@@ -276,6 +276,8 @@ int main(void) {
 			ImGui::DragFloat3("Scale",    glm::value_ptr(sceneObjects[index].scale),    0.1f);
 			
 			ImGui::End();
+
+			sceneObjects[index].material->materialSettingsPanel();
 		}
 
 		ImGui::EndFrame();

@@ -8,6 +8,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "include/stb_image/stb_image.h"
+#include <imgui/imgui.h>
 #include "Shader.h"
 using namespace std;
 
@@ -16,6 +17,7 @@ class Material {
 		Shader& shader;
 		Material(Shader& shader): shader(shader) {};
 		virtual void apply() = 0;
+		virtual void materialSettingsPanel() = 0;
 };
 
 class ColorMaterial: public Material {
@@ -30,14 +32,28 @@ class ColorMaterial: public Material {
 		void apply() {
 			shader.setVec3("color", color);
 		}
+
+		void materialSettingsPanel() {
+			ImGui::Begin("Color Material Settings");
+
+			ImGui::ColorEdit4("Color", glm::value_ptr(color), ImGuiColorEditFlags_NoInputs);
+			
+			ImGui::End();
+		}
 };
 
 class DiffuseMaterial: public Material {
 public:
 	DiffuseMaterial(Shader& shader): Material(shader) {};
 
+	// this one assumes that the references model already has a diffuse texture, so no uniforms needed to be set here
 	void apply() {
 		shader.use();
+	}
+
+	void materialSettingsPanel() {
+		ImGui::Begin("Diffuse Material Settings");			
+		ImGui::End();
 	}
 };
 
