@@ -25,7 +25,8 @@ public:
 	float scrollSensitivity = 1.0f;
 	bool isLeftClick = false;
 
-	OrbitControls(float fov, float moveSpeed, float mouseSensitivity, float aspectRatio): Camera(fov, moveSpeed, mouseSensitivity, aspectRatio) {
+	OrbitControls(float fov, float moveSpeed, float mouseSensitivity, float windowWidth, float windowHeight): 
+		Camera(fov, moveSpeed, mouseSensitivity, windowWidth, windowHeight) {
 		updateCameraPos(r, theta, phi);
 	};
 

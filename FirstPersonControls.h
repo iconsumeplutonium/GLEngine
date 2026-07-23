@@ -11,7 +11,8 @@
 
 class FirstPersonControls: public Camera {
 public:
-	FirstPersonControls(float fov, float moveSpeed, float mouseSensitivity, float aspectRatio): Camera(fov, moveSpeed, mouseSensitivity, aspectRatio) {};
+	FirstPersonControls(float fov, float moveSpeed, float mouseSensitivity, float windowWidth, float windowHeight): 
+		Camera(fov, moveSpeed, mouseSensitivity, windowWidth, windowHeight) {};
 
 	void processInput(GLFWwindow* window, float deltaTime) {
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

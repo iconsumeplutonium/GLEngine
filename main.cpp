@@ -25,8 +25,11 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 float fov = 70.0f;
-// FirstPersonControls camera(fov, 2.5f, 50.0f, 800.0f/600.0f);
-OrbitControls camera(fov, 2.5f, 50.0f, 800.0f/600.0f);
+const float WINDOW_WIDTH = 1280.0f;
+const float WINDOW_HEIGHT = 720.0f;
+
+// FirstPersonControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
+OrbitControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
@@ -38,28 +41,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 
 void processInput(GLFWwindow* window) {
 	camera.processInput(window, deltaTime);
-
-	// if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-	// 	glfwSetWindowShouldClose(window, true);
-
-	// if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-	// 	camera.moveForward(deltaTime);
-	// }
-	// if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-	// 	camera.moveBackward(deltaTime);
-	// }
-	// if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-	// 	camera.moveLeft(deltaTime);
-	// }
-	// if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-	// 	camera.moveRight(deltaTime);
-	// }
-	// if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-	// 	camera.moveUp(deltaTime);
-	// }
-	// if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-	// 	camera.moveDown(deltaTime);
-	// }
 }
 
 void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -77,7 +58,7 @@ int main(void) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Da Engine", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Da Engine", nullptr, nullptr);
 	if (window == NULL) {
 		cout << "Failed to create window." << endl;
 		glfwTerminate();
@@ -90,7 +71,7 @@ int main(void) {
 		return -1;
 	}
 
-	glViewport(0, 0, 800, 600);
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouseCallback);
 	glfwSetScrollCallback(window, scrollCallback);
@@ -243,7 +224,6 @@ int main(void) {
 	bool isSceneOpen = true;
 	std::vector<SceneObject> sceneObjects;
 
-	// sceneObjects.push_back(Model("models/backpack/backpack.obj"));
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	while (!glfwWindowShouldClose(window)) {
@@ -251,7 +231,7 @@ int main(void) {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		cout << "fps: " << 1.0f / deltaTime << endl;
+		cout << "fps: " << 1.0f / deltaTime << "\r";
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -263,15 +243,30 @@ int main(void) {
 		if (ImGui::Button("Add Primitive")) {
 			SceneObject sphere("models/sphere.obj");
 			sphere.material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(0.0f, 0.0f, 1.0f));
+			sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
 
 			sceneObjects.push_back(std::move(sphere));
 		}
 		if (ImGui::Button("Add Backpack")) {
 			SceneObject bag("models/backpack/backpack.obj");
 			bag.material = std::make_unique<DiffuseMaterial>(diffuseShader);
+			bag.name = "Backpack " + std::to_string(sceneObjects.size() + 1);
+
 			sceneObjects.push_back(std::move(bag));
 		}
+
+		static int index = 0;
+		std::vector<const char*> labels;
+		for (auto& obj: sceneObjects) {
+			labels.push_back(obj.name.c_str());
+		}
+		ImGui::Text("Scene");
+		ImGui::ListBox("##SceneListBox", &index, labels.data(), labels.size());
+
+		// ImGui::ShowDemoWindow();
 		ImGui::End();
+
+		
 
 		processInput(window);
 		
