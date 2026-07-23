@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(OpenGLApp)
+project(GLEngine)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,6 +12,13 @@ set(SOURCES
 	${CMAKE_SOURCE_DIR}/include/stb_image.h
 	${CMAKE_SOURCE_DIR}/include/stb_image.cpp
     ${CMAKE_SOURCE_DIR}/include/glad/glad.c
+    ${CMAKE_SOURCE_DIR}/include/imgui/imgui.cpp
+    ${CMAKE_SOURCE_DIR}/include/imgui/imgui_draw.cpp
+    ${CMAKE_SOURCE_DIR}/include/imgui/imgui_demo.cpp
+    ${CMAKE_SOURCE_DIR}/include/imgui/imgui_tables.cpp
+    ${CMAKE_SOURCE_DIR}/include/imgui/imgui_widgets.cpp
+    ${CMAKE_SOURCE_DIR}/include/imgui/imgui_impl_glfw.cpp
+    ${CMAKE_SOURCE_DIR}/include/imgui/imgui_impl_opengl3.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
