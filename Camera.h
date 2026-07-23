@@ -37,7 +37,7 @@ public:
 		aspectRatio(windowWidth / windowHeight),
 		mousePosLastFrame(glm::vec2(windowHeight / 2.0f, windowWidth / 2.0f)) {};
 
-	virtual void processInput(GLFWwindow* window, float deltaTime) = 0;
+	virtual void processInput(GLFWwindow* window, float deltaTime, bool shouldCaptureMouse) = 0;
 	virtual void updateCameraRotation(GLFWwindow* window, double xPos, double yPos, float deltaTime) = 0;
 	virtual void onScroll(double yOffset) = 0;
 

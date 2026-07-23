@@ -8,6 +8,9 @@
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <iostream>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 #include "Camera.h"
 
 const float PI = 3.141592653f;
@@ -30,12 +33,14 @@ public:
 		updateCameraPos(r, theta, phi);
 	};
 
-	void processInput(GLFWwindow* window, float deltaTime) {
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-			isLeftClick = true;
-		} else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
-			isLeftClick = false;
-			firstMouse = true;
+	void processInput(GLFWwindow* window, float deltaTime, bool shouldCaptureMouse) override {
+		if (shouldCaptureMouse) {
+			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+				isLeftClick = true;
+			} else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
+				isLeftClick = false;
+				firstMouse = true;
+			}
 		}
 	}
 

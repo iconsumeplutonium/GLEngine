@@ -39,8 +39,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	camera.aspectRatio = ((float) width) / height;
 }
 
-void processInput(GLFWwindow* window) {
-	camera.processInput(window, deltaTime);
+void processInput(GLFWwindow* window, bool shouldCaptureMouse) {
+	camera.processInput(window, deltaTime, shouldCaptureMouse);
 }
 
 void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
@@ -82,6 +82,9 @@ int main(void) {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
+	float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.FontScaleDpi = main_scale * 1.25f;
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
@@ -170,15 +173,15 @@ int main(void) {
 	// glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind vbo
 	// glBindVertexArray(0); //unbind vao -----------------------------------------------------------
 
-	unsigned int lightVAO; //-------------------------------- light vao
-	glGenVertexArrays(1, &lightVAO);
-	glBindVertexArray(lightVAO);
+	// unsigned int lightVAO; //-------------------------------- light vao
+	// glGenVertexArrays(1, &lightVAO);
+	// glBindVertexArray(lightVAO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); //bind the cube vbo so the data is the sameig
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
-	glEnableVertexAttribArray(0);
+	// glBindBuffer(GL_ARRAY_BUFFER, VBO); //bind the cube vbo so the data is the sameig
+	// glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
+	// glEnableVertexAttribArray(0);
 
-	glBindVertexArray(0); // ------------------------------------------
+	// glBindVertexArray(0); // ------------------------------------------
 
 
 	// Texture texture1("textures/container.jpg", GL_TEXTURE0);
@@ -262,13 +265,24 @@ int main(void) {
 		}
 		ImGui::Text("Scene");
 		ImGui::ListBox("##SceneListBox", &index, labels.data(), labels.size());
-
-		// ImGui::ShowDemoWindow();
 		ImGui::End();
+		
+
+		if (sceneObjects.size() > 0) {
+			ImGui::Begin("Transform");
+			ImGui::Text(sceneObjects[index].name.c_str());
+			ImGui::DragFloat3("Position", glm::value_ptr(sceneObjects[index].position), 0.1f);
+			ImGui::DragFloat3("Rotation", glm::value_ptr(sceneObjects[index].rotation), 0.1f);
+			ImGui::DragFloat3("Scale",    glm::value_ptr(sceneObjects[index].scale),    0.1f);
+			
+			ImGui::End();
+		}
+
+		ImGui::EndFrame();
 
 		
 
-		processInput(window);
+		processInput(window, !io.WantCaptureMouse);
 		
 		// glm::mat4 model = glm::mat4(1.0f);
 		// glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
@@ -288,7 +302,7 @@ int main(void) {
 		// glBindVertexArray(VAO);
 		
 		// backpack.render(shaders);
-		for (auto& m: sceneObjects) {
+		for (SceneObject& m: sceneObjects) {
 			// do m.shader.use
 			m.material->shader.use();
 			// set the object model matrix
