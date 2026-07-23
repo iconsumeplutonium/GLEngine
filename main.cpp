@@ -7,6 +7,8 @@
 #include "Shader.h"
 #include "include/stb_image/stb_image.h"
 #include "Camera.h"
+#include "FirstPersonControls.h"
+#include "OrbitControls.h"
 // #include "Texture.h"
 // #include "Mesh.h"
 #include "Model.h"
@@ -20,7 +22,8 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 float fov = 70.0f;
-Camera camera(fov, 2.5f, 50.0f, 800.0f/600.0f);
+// FirstPersonControls camera(fov, 2.5f, 50.0f, 800.0f/600.0f);
+OrbitControls camera(fov, 2.5f, 50.0f, 800.0f/600.0f);
 
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
@@ -57,7 +60,7 @@ void processInput(GLFWwindow* window) {
 }
 
 void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
-	camera.updateCameraRotation(xPos, yPos, deltaTime);
+	camera.updateCameraRotation(window, xPos, yPos, deltaTime);
 }
 
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
