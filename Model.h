@@ -11,6 +11,8 @@
 #include "Mesh.h"
 using namespace std;
 
+#define here cout << "here" << endl;
+
 class Model {
 private:
 	vector<Texture_> texturesLoaded;
@@ -30,11 +32,13 @@ public:
 			cout << importer.GetErrorString() << endl;
 			exit(-1);
 		}
-
+		
+		cout << "in model constructor" << endl;
 		processNode(scene->mRootNode, scene);
 	}
 
 	void processNode(aiNode* node, const aiScene* scene) {
+		cout << "processing node" << endl;
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 			meshes.push_back(processMesh(mesh, scene));
@@ -43,9 +47,12 @@ public:
 		for (int i = 0; i < node->mNumChildren; i++) {
 			processNode(node->mChildren[i], scene);
 		}	
+
+		cout << "processed node" << endl;
 	}
 
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene) {
+		cout << "processing mesh" << endl;
 		vector<Vertex> vertices;
 		vector<unsigned int> indices;
 		vector<Texture_> textures;
@@ -53,7 +60,12 @@ public:
 		for (int i = 0; i < mesh->mNumVertices; i++) {
 			Vertex v;
 			v.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-			v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+
+			if (mesh->mNormals != nullptr) {
+				v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+			} else {
+				v.normal = glm::vec3(0.0f);
+			}
 
 			if (mesh->mTextureCoords[0]) {
 				// v.uv = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);

@@ -36,24 +36,6 @@ public:
 			isLeftClick = false;
 			firstMouse = true;
 		}
-		// if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		// 	moveForward(deltaTime);
-		// }
-		// if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		// 	moveBackward(deltaTime);
-		// }
-		// if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		// 	moveLeft(deltaTime);
-		// }
-		// if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		// 	moveRight(deltaTime);
-		// }
-		// if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		// 	moveUp(deltaTime);
-		// }
-		// if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-		// 	moveDown(deltaTime);
-		// }
 	}
 
 	void updateCameraRotation(GLFWwindow* window, double xPos, double yPos, float deltaTime) {
@@ -94,37 +76,11 @@ public:
 	void onScroll(double yOffset) {
 		r -= yOffset * scrollSensitivity;
 		updateCameraPos(r, theta, phi);
-		// fov = std::max(std::min(fov, 120.0f), 30.0f);
 	}
 
 	glm::mat4 getViewMatrix() override {
 		return glm::lookAt(eye, at, up);
 	}
-
-	// void moveForward(float deltaTime) {
-	// 	eye += dir * moveSpeed * deltaTime;
-	// }
-
-	// void moveBackward(float deltaTime) {
-	// 	eye -= dir * moveSpeed * deltaTime;
-	// }
-
-	// void moveLeft(float deltaTime) {
-	// 	eye -= right * moveSpeed * deltaTime;
-	// }
-
-	// void moveRight(float deltaTime) {
-	// 	eye += right * moveSpeed * deltaTime;
-	// }
-
-	// void moveUp(float deltaTime) {
-	// 	eye += up * moveSpeed * deltaTime;
-	// }
-	
-	// void moveDown(float deltaTime) {
-	// 	eye -= up * moveSpeed * deltaTime;
-	// }
-
 };
 
 #endif

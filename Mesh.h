@@ -4,6 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include <vector>
+#include <iostream>
 #include "Shader.h"
 using namespace std;
 
@@ -69,6 +70,8 @@ public:
 			shader.setInt(name + number, i);
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
 		}
+
+		std::cout << textures.size() << std::endl;
 
 		// glActiveTexture(GL_TEXTURE0);
 

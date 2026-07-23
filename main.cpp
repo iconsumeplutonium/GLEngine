@@ -15,6 +15,7 @@
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
+#include <vector>
 using namespace std;
 	
 
@@ -104,6 +105,7 @@ int main(void) {
 
 
 	Shader shaders("shaders/vertex.vs", "shaders/fragment.fs");
+	Shader basic("shaders/basic/basic.vs", "shaders/basic/basic.fs");
 	// Shader lightShader("shaders/vertex.vs", "shaders/lightFragment.fs");
 
 
@@ -193,8 +195,6 @@ int main(void) {
 
 	glBindVertexArray(0); // ------------------------------------------
 
-	Model backpack("backpack/backpack.obj");
-
 
 	// Texture texture1("textures/container.jpg", GL_TEXTURE0);
 	// Texture texture2("textures/awesomeface.png", GL_TEXTURE1);
@@ -236,7 +236,11 @@ int main(void) {
 	shaders.setVec3("spotlight.diffuse", 0.8f, 0.8f, 0.8f);
 	shaders.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
 	
-	
+	bool isSceneOpen = true;
+	std::vector<Model> sceneObjects;
+
+	// sceneObjects.push_back(Model("models/backpack/backpack.obj"));
+
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = glfwGetTime();
@@ -248,17 +252,25 @@ int main(void) {
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		ImGui::ShowDemoWindow();
+		ImGui::Begin("Scene", &isSceneOpen);
+		ImGui::Text("Objects");
+		if (ImGui::Button("Add Primitive")) {
+			sceneObjects.push_back(Model("models/sphere.obj"));
+		}
+		ImGui::End();
 
 		processInput(window);
 		
 		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
-		shaders.use();
-		shaders.setMat4("model", model);
-		shaders.setMat4("view", camera.getViewMatrix());
-		shaders.setMat4("projection", camera.getProjectionMatrix());
-		shaders.setMat3("normalMatrix", normalMatrix);
+		basic.use();
+		basic.setMat4("model", model);
+		basic.setMat4("view", camera.getViewMatrix());
+		basic.setMat4("projection", camera.getProjectionMatrix());
+		basic.setMat3("normalMatrix", normalMatrix);
+		basic.setVec3("color", 0.0f, 0.0f, 1.0f);
+
+
 		// shaders.setVec3("camPos", camera.eye);
 		// shaders.setVec3("spotlight.position",  camera.eye);
 		// shaders.setVec3("spotlight.direction", camera.dir);
@@ -266,7 +278,10 @@ int main(void) {
 		// specularMap.bindTexture();
 		// glBindVertexArray(VAO);
 		
-		backpack.render(shaders);
+		// backpack.render(shaders);
+		for (auto& m: sceneObjects) {
+			m.render(basic);
+		}
 		
 		// glDrawArrays(GL_TRIANGLES, 0, 36);
 		
