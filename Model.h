@@ -35,6 +35,7 @@ public:
 		
 		cout << "in model constructor" << endl;
 		processNode(scene->mRootNode, scene);
+		cout << "done consturcting model" << endl;
 	}
 
 	void processNode(aiNode* node, const aiScene* scene) {

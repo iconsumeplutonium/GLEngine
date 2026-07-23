@@ -16,6 +16,8 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 #include <vector>
+#include "SceneObject.h"
+#include "Material.h"
 using namespace std;
 	
 
@@ -104,8 +106,10 @@ int main(void) {
 	ImGui_ImplOpenGL3_Init();
 
 
-	Shader shaders("shaders/vertex.vs", "shaders/fragment.fs");
-	Shader basic("shaders/basic/basic.vs", "shaders/basic/basic.fs");
+	Shader diffuseShader("shaders/vertex.vs", "shaders/fragment.fs"); // diffuse
+	Shader colorShader("shaders/basic/basic.vs", "shaders/basic/basic.fs"); // solid color only
+
+
 	// Shader lightShader("shaders/vertex.vs", "shaders/lightFragment.fs");
 
 
@@ -199,7 +203,7 @@ int main(void) {
 	// Texture texture1("textures/container.jpg", GL_TEXTURE0);
 	// Texture texture2("textures/awesomeface.png", GL_TEXTURE1);
 
-	shaders.use();
+	// shaders.use();
 	
 	// Texture diffuseMap("textures/container2.png", GL_TEXTURE0);
 	// Texture specularMap("textures/container2_specular.png", GL_TEXTURE1);
@@ -207,10 +211,10 @@ int main(void) {
 	// shaders.setInt("material.specular", 1);
 	// shaders.setFloat("material.shininess", 32.0f);
 
-	shaders.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-	shaders.setVec3("dirLight.ambient",  0.2f, 0.2f, 0.2f);
-	shaders.setVec3("dirLight.diffuse",  0.5f, 0.5f, 0.5f);
-	shaders.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
+	// shaders.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+	// shaders.setVec3("dirLight.ambient",  0.2f, 0.2f, 0.2f);
+	// shaders.setVec3("dirLight.diffuse",  0.5f, 0.5f, 0.5f);
+	// shaders.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
 	glm::vec3 pointLightPositions[] = {
 		glm::vec3( 0.7f,  0.2f,  2.0f),
@@ -218,26 +222,26 @@ int main(void) {
 		glm::vec3(-4.0f,  2.0f, -12.0f),
 		glm::vec3( 0.0f,  0.0f, -3.0f)
 	};
-	for (int i = 0; i < 4; i++) {
-		shaders.setFloat("pointLights[" + std::to_string(i) + "].constant",  1.0f);
-		shaders.setFloat("pointLights[" + std::to_string(i) + "].linear",    0.09f);
-		shaders.setFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f);
-		shaders.setVec3("pointLights[" + std::to_string(i) + "].position", pointLightPositions[i]);	
-	}
+	// for (int i = 0; i < 4; i++) {
+	// 	shaders.setFloat("pointLights[" + std::to_string(i) + "].constant",  1.0f);
+	// 	shaders.setFloat("pointLights[" + std::to_string(i) + "].linear",    0.09f);
+	// 	shaders.setFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f);
+	// 	shaders.setVec3("pointLights[" + std::to_string(i) + "].position", pointLightPositions[i]);	
+	// }
 	
-	shaders.setVec3("spotlight.position",  camera.eye);
-	shaders.setVec3("spotlight.direction", camera.dir);
-	shaders.setFloat("spotlight.innerCutoff", glm::cos(glm::radians(12.5f)));
-	shaders.setFloat("spotlight.outerCutoff", glm::cos(glm::radians(17.5f)));
-	shaders.setFloat("spotlight.constant",  1.0f);
-	shaders.setFloat("spotlight.linear",    0.09f);
-	shaders.setFloat("spotlight.quadratic", 0.032f);
-	shaders.setVec3("spotlight.ambient", 0.1f, 0.1f, 0.1f);
-	shaders.setVec3("spotlight.diffuse", 0.8f, 0.8f, 0.8f);
-	shaders.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
+	// shaders.setVec3("spotlight.position",  camera.eye);
+	// shaders.setVec3("spotlight.direction", camera.dir);
+	// shaders.setFloat("spotlight.innerCutoff", glm::cos(glm::radians(12.5f)));
+	// shaders.setFloat("spotlight.outerCutoff", glm::cos(glm::radians(17.5f)));
+	// shaders.setFloat("spotlight.constant",  1.0f);
+	// shaders.setFloat("spotlight.linear",    0.09f);
+	// shaders.setFloat("spotlight.quadratic", 0.032f);
+	// shaders.setVec3("spotlight.ambient", 0.1f, 0.1f, 0.1f);
+	// shaders.setVec3("spotlight.diffuse", 0.8f, 0.8f, 0.8f);
+	// shaders.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
 	
 	bool isSceneOpen = true;
-	std::vector<Model> sceneObjects;
+	std::vector<SceneObject> sceneObjects;
 
 	// sceneObjects.push_back(Model("models/backpack/backpack.obj"));
 
@@ -247,6 +251,8 @@ int main(void) {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		cout << "fps: " << 1.0f / deltaTime << endl;
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		ImGui_ImplOpenGL3_NewFrame();
@@ -255,20 +261,28 @@ int main(void) {
 		ImGui::Begin("Scene", &isSceneOpen);
 		ImGui::Text("Objects");
 		if (ImGui::Button("Add Primitive")) {
-			sceneObjects.push_back(Model("models/sphere.obj"));
+			SceneObject sphere("models/sphere.obj");
+			sphere.material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(0.0f, 0.0f, 1.0f));
+
+			sceneObjects.push_back(std::move(sphere));
+		}
+		if (ImGui::Button("Add Backpack")) {
+			SceneObject bag("models/backpack/backpack.obj");
+			bag.material = std::make_unique<DiffuseMaterial>(diffuseShader);
+			sceneObjects.push_back(std::move(bag));
 		}
 		ImGui::End();
 
 		processInput(window);
 		
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
-		basic.use();
-		basic.setMat4("model", model);
-		basic.setMat4("view", camera.getViewMatrix());
-		basic.setMat4("projection", camera.getProjectionMatrix());
-		basic.setMat3("normalMatrix", normalMatrix);
-		basic.setVec3("color", 0.0f, 0.0f, 1.0f);
+		// glm::mat4 model = glm::mat4(1.0f);
+		// glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
+		// basic.use();
+		// basic.setMat4("model", model);
+		// basic.setMat4("view", camera.getViewMatrix());
+		// basic.setMat4("projection", camera.getProjectionMatrix());
+		// basic.setMat3("normalMatrix", normalMatrix);
+		// basic.setVec3("color", 0.0f, 0.0f, 1.0f);
 
 
 		// shaders.setVec3("camPos", camera.eye);
@@ -280,8 +294,19 @@ int main(void) {
 		
 		// backpack.render(shaders);
 		for (auto& m: sceneObjects) {
-			m.render(basic);
+			// do m.shader.use
+			m.material->shader.use();
+			// set the object model matrix
+			m.material->shader.setMat4("model", m.getModelMatrix());
+			// set the view and projection matrices
+			m.material->shader.setMat4("view", camera.getViewMatrix());
+			m.material->shader.setMat4("projection", camera.getProjectionMatrix());	
+			// call the object.material.applyuniforms
+			m.material->apply();
+			// call object render
+			m.model.render(m.material->shader);
 		}
+
 		
 		// glDrawArrays(GL_TRIANGLES, 0, 36);
 		

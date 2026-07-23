@@ -71,7 +71,7 @@ public:
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
 		}
 
-		std::cout << textures.size() << std::endl;
+		// std::cout << textures.size() << std::endl;
 
 		// glActiveTexture(GL_TEXTURE0);
 
