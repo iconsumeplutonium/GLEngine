@@ -229,23 +229,6 @@ int main(void) {
 
 		processInput(window, !io.WantCaptureMouse);
 
-		
-	
-		
-		// for (SceneObject& m: sceneObjects) {
-		// 	// do m.shader.use
-		// 	m.material->shader.use();
-		// 	// set the object model matrix
-		// 	m.material->shader.setMat4("model", m.getModelMatrix());
-		// 	// set the view and projection matrices
-		// 	m.material->shader.setMat4("view", camera.getViewMatrix());
-		// 	m.material->shader.setMat4("projection", camera.getProjectionMatrix());	
-		// 	// call the object.material.applyuniforms
-		// 	m.material->apply();
-		// 	// call object render
-		// 	m.model.render(m.material->shader);
-		// }
-
 		for (auto& [program, objsWithProgram]: shaderGroups) {
 			if (objsWithProgram.size() == 0) continue;
 

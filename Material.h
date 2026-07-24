@@ -78,7 +78,10 @@ public:
 	}
 
 	void materialSettingsPanel() {
-		ImGui::Begin("Lit Material Settings");			
+		ImGui::Begin("Lit Material Settings");
+		ImGui::ColorEdit4("Diffuse", glm::value_ptr(diffuseColor), ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Specular", glm::value_ptr(specularColor), ImGuiColorEditFlags_NoInputs);
+		ImGui::DragFloat("Specular Exp", &specularExp, 0.1f, 0.0f, 300.0f, "%.2f", ImGuiColorEditFlags_NoInputs);
 		ImGui::End();
 	}
 };
