@@ -57,5 +57,31 @@ public:
 	}
 };
 
+// when creating a primitive, instantiate the material witht he diffuse/speuclar colors already. 
+// hasTexture will bet set to true or false somewhere else? and if its false, the color uniforms will be used. if true
+// these will be ignored so uploading wont matter.
+
+// when loading a model, assume it to have textures already, and dont pass in a color
+// in mesh.render, if it has no textures, it can pass in a color on its own
+class LitMaterial: public Material {
+public:
+	glm::vec3 diffuseColor = glm::vec3(1.0f);
+	glm::vec3 specularColor = glm::vec3(1.0f);
+	float specularExp = 20.0f;
+
+	LitMaterial(Shader& shader): Material(shader) {};
+
+	void apply() {
+		shader.setVec3("diffuseColor", diffuseColor);
+		shader.setVec3("specularColor", diffuseColor);
+		shader.setFloat("specularExp", specularExp);
+	}
+
+	void materialSettingsPanel() {
+		ImGui::Begin("Lit Material Settings");			
+		ImGui::End();
+	}
+};
+
 
 #endif

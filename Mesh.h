@@ -45,9 +45,9 @@ public:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));		
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));		
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));		
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
@@ -56,16 +56,25 @@ public:
 	};
 
 	void render(Shader& shader) {
+		// assume it to have no textures at all. if it does, in the loop, these will become true and
+		// the texture will be used
+		shader.setBool("hasDiffuseMap", false);
+		shader.setBool("hasSpecularMap", false);
+
 		unsigned int diffuseNum = 1;
 		unsigned int specularNum = 1;
 		for (int i = 0; i < textures.size(); i++) {
 			glActiveTexture(GL_TEXTURE0 + i);
 			string number;
 			string name = textures[i].type;
-			if (name == "texture_diffuse")
+			if (name == "texture_diffuse") {
 				number = std::to_string(diffuseNum++);
-			else if (name == "texture_specular")
+				shader.setBool("hasDiffuseMap", true);
+			}
+			else if (name == "texture_specular"){ 
 				number = std::to_string(specularNum++);
+				shader.setBool("hasSpecularMap", true);
+			}
 
 			shader.setInt(name + number, i);
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
