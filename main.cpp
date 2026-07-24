@@ -102,6 +102,8 @@ int main(void) {
 	Shader diffuseShader("shaders/diffuse/vertex.vs", "shaders/diffuse/fragment.fs"); // diffuse
 	Shader litShader("shaders/light/vertex.vs", "shaders/light/fragment.fs"); // lighting
 
+	const char* materialTypes[] = {"Color Material", "Diffuse Material", "Lit Material"};
+
 
 	// Shader lightShader("shaders/vertex.vs", "shaders/lightFragment.fs");
 
@@ -172,8 +174,11 @@ int main(void) {
 		ImGui::Text("Objects");
 		if (ImGui::Button("Add Primitive")) {
 			SceneObject sphere("models/sphere.obj");
-			// sphere.material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(0.0f, 0.0f, 1.0f));
-			sphere.material = make_unique<LitMaterial>(litShader);
+			sphere.material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(0.0f, 0.0f, 1.0f));
+			// sphere.setMaterial(std::move(make_unique<LitMaterial>(litShader)), MaterialType::Lit);
+
+			// sphere.material = make_unique<LitMaterial>(litShader);
+			// sphere.materi
 
 			sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
 
@@ -181,8 +186,10 @@ int main(void) {
 		}
 		if (ImGui::Button("Add Backpack")) {
 			SceneObject bag("models/backpack/backpack.obj");
-			// bag.material = std::make_unique<DiffuseMaterial>(diffuseShader);
-			bag.material = make_unique<LitMaterial>(litShader);
+			bag.material = std::make_unique<DiffuseMaterial>(diffuseShader);
+			// bag.material = make_unique<LitMaterial>(litShader);
+			// bag.setMaterial(std::move(make_unique<LitMaterial>(litShader)), MaterialType::Lit);
+
 			bag.name = "Backpack " + std::to_string(sceneObjects.size() + 1);
 
 			sceneObjects.push_back(std::move(bag));
@@ -215,6 +222,22 @@ int main(void) {
 			ImGui::DragFloat3("Position", glm::value_ptr(sceneObjects[index].position), 0.1f);
 			ImGui::DragFloat3("Rotation", glm::value_ptr(sceneObjects[index].rotation), 0.1f);
 			ImGui::DragFloat3("Scale",    glm::value_ptr(sceneObjects[index].scale),    0.1f);
+
+			// if this function returns true, then currentMaterial changed
+			static int currentMaterial = sceneObjects[index].material->getMaterialType();
+			if (ImGui::Combo("Material", &currentMaterial, materialTypes, IM_COUNTOF(materialTypes))) {
+				switch (currentMaterial) {
+					case MaterialType::Color:
+						sceneObjects[index].material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(1.0f));
+						break;
+					case MaterialType::Diffuse:
+						sceneObjects[index].material = std::make_unique<DiffuseMaterial>(diffuseShader);
+						break;
+					case MaterialType::Lit:
+						sceneObjects[index].material = std::make_unique<LitMaterial>(litShader);
+						break;
+				}
+			}
 			
 			ImGui::End();
 

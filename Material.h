@@ -12,12 +12,19 @@
 #include "Shader.h"
 using namespace std;
 
+enum MaterialType {
+	Color = 0,
+	Diffuse,
+	Lit
+};
+
 class Material {
 	public:
 		Shader& shader;
 		Material(Shader& shader): shader(shader) {};
 		virtual void apply() = 0;
 		virtual void materialSettingsPanel() = 0;
+		virtual MaterialType getMaterialType() = 0;
 };
 
 class ColorMaterial: public Material {
@@ -40,6 +47,10 @@ class ColorMaterial: public Material {
 			
 			ImGui::End();
 		}
+
+		MaterialType getMaterialType() {
+			return MaterialType::Color;
+		}
 };
 
 class DiffuseMaterial: public Material {
@@ -55,6 +66,10 @@ public:
 		ImGui::Begin("Diffuse Material Settings");			
 		ImGui::End();
 	}
+
+	MaterialType getMaterialType() {
+		return MaterialType::Diffuse;
+	}	
 };
 
 // when creating a primitive, instantiate the material witht he diffuse/speuclar colors already. 
@@ -83,6 +98,10 @@ public:
 		ImGui::ColorEdit4("Specular", glm::value_ptr(specularColor), ImGuiColorEditFlags_NoInputs);
 		ImGui::DragFloat("Specular Exp", &specularExp, 0.1f, 0.0f, 300.0f, "%.2f", ImGuiColorEditFlags_NoInputs);
 		ImGui::End();
+	}
+
+	MaterialType getMaterialType() {
+		return MaterialType::Lit;
 	}
 };
 
