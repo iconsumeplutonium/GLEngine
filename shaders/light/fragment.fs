@@ -31,8 +31,12 @@ struct PointLight {
 };
 
 struct Spotlight {
-	vec3 position;
-	vec3 direction;
+	vec4 position;
+	vec4 direction;
+
+	vec4 diffuse;
+	vec4 ambient;
+	vec4 specular;
 
 	float innerCutoff;
 	float outerCutoff;
@@ -40,16 +44,16 @@ struct Spotlight {
 	float constant;
 	float linear;
 	float quadratic;
-
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
 };
 
+
 #define MAX_POINT_LIGHTS 10
+#define MAX_SPOTLIGHTS 10
 layout (std140, binding = 0) uniform PointLights {
 	PointLight pointLights[MAX_POINT_LIGHTS];
+	Spotlight spotlights[MAX_SPOTLIGHTS];
 	int numPointLights;
+	int numSpotlights;
 };
 
 uniform vec3 camPos;
@@ -127,15 +131,43 @@ void main() {
 	vec3 baseDiffuseColor = hasDiffuseMap ? texture(diffuseMap, vUv).xyz : diffuseColor;
 	vec3 baseSpecularColor = hasSpecularMap ? texture(specularMap, vUv).xyz : specularColor;
 
-	if (numPointLights == 0) {
+	if (numSpotlights == 0) { // todo: make this and
 		FragColor = vec4(0.1 * baseDiffuseColor, 1.0);
 		return;
 	}
 
-	vec3 color = vec3(0.0);
-	for (int i = 0; i < numPointLights; i++) {
-		color += calculatePointLight(pointLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
-	}
+	Spotlight light = spotlights[0];
 
-	FragColor = vec4(color, 1.0);
+
+	vec3 dirToLight = normalize(light.position.xyz - fragPos);
+
+	float d = length(light.position.xyz - fragPos);
+	float attenuation = 1.0 / (light.constant + light.linear*d + light.quadratic*d*d);
+
+
+	float nDotL = max(dot(dirToLight, vNormal), 0.0);
+	vec3 diffuse = nDotL * baseDiffuseColor * light.diffuse.xyz;
+
+	vec3 halfway = normalize(dirToLight + dirToCamera);
+	float specularStrength = max(dot(halfway, vNormal), 0.0f);
+	float spec = pow(specularStrength, specularExp);
+	vec3 specular = spec * baseSpecularColor * light.specular.xyz;
+
+
+    float theta = dot(-dirToLight, normalize(light.direction.xyz)); 
+    float epsilon = light.innerCutoff - light.outerCutoff;
+    float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
+
+    vec3 ambient = 0.1 * baseDiffuseColor * light.ambient.xyz;
+    // vec3 diffuse = light.diffuse.xyz * diff * baseDiffuseColor;
+    // vec3 specular = light.specular.xyz * spec * baseSpecularColor;
+
+
+
+	// vec3 color = vec3(0.0);
+	// for (int i = 0; i < numPointLights; i++) {
+	// 	color += calculatePointLight(pointLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
+	// }
+
+	FragColor = vec4((diffuse*intensity + ambient + specular*intensity) * attenuation, 1.0);
 }

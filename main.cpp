@@ -33,6 +33,7 @@ const float WINDOW_WIDTH = 1280.0f;
 const float WINDOW_HEIGHT = 720.0f;
 
 const int MAX_POINT_LIGHTS = 10;
+const int MAX_SPOTLIGHTS = 10;
 
 // FirstPersonControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 OrbitControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -127,12 +128,14 @@ int main(void) {
 	std::vector<SceneObject> sceneObjects;
 	std::unordered_map<unsigned int, std::vector<SceneObject*>> shaderGroups;
 	vector<PointLight> pointLights;
+	vector<Spotlight> spotlights;
 
-	unsigned int pointLightUBO;
-	glGenBuffers(1, &pointLightUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, pointLightUBO);
-	glBufferData(GL_UNIFORM_BUFFER, (sizeof(PointLightGPUStruct) * MAX_POINT_LIGHTS) + 4, nullptr, GL_DYNAMIC_DRAW); // +4 is the numlights uniform
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, pointLightUBO); 
+	unsigned int lightUBO;
+	glGenBuffers(1, &lightUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, lightUBO);
+	int size = (sizeof(PointLightGPUStruct) * MAX_POINT_LIGHTS) + (sizeof(SpotlightGPUStruct) * MAX_SPOTLIGHTS) + 8; // +4 is the numlights uniform
+	glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW); 
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO); 
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	while (!glfwWindowShouldClose(window)) {
@@ -153,15 +156,28 @@ int main(void) {
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// upload all pointlights at once via ubo (not to be confused with the adblocker of the same acronym)
-		glBindBuffer(GL_UNIFORM_BUFFER, pointLightUBO);
-		int numPointLights = std::min((int) pointLights.size(), 10);
+		// upload all lights at once via ubo (not to be confused with the adblocker of the same acronym)
+		int baseOffset = 0;
+		glBindBuffer(GL_UNIFORM_BUFFER, lightUBO);
+		int numPointLights = pointLights.size();
 		for (int i = 0; i < numPointLights; i++) {
-			int offset = i * sizeof(PointLightGPUStruct);
+			int offset = baseOffset + (i * sizeof(PointLightGPUStruct));
 			PointLightGPUStruct pl = pointLights[i].getGPUStruct();
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(PointLightGPUStruct), &pl);
 		};
-		glBufferSubData(GL_UNIFORM_BUFFER, MAX_POINT_LIGHTS * sizeof(PointLightGPUStruct), sizeof(int), &numPointLights);
+
+		baseOffset = MAX_POINT_LIGHTS * sizeof(PointLightGPUStruct);
+		int numSpotlights = spotlights.size();
+		for (int i = 0; i < numSpotlights; i++) {
+			int offset = baseOffset + i * sizeof(SpotlightGPUStruct);
+			SpotlightGPUStruct pl = spotlights[i].getGPUStruct();
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(SpotlightGPUStruct), &pl);
+		};
+
+		baseOffset += MAX_SPOTLIGHTS * sizeof(SpotlightGPUStruct);
+		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numPointLights);
+		baseOffset += sizeof(int);
+		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numSpotlights);
 		
 
 		ImGui_ImplOpenGL3_NewFrame();
@@ -200,15 +216,25 @@ int main(void) {
 			sceneObjects.push_back(std::move(bag));
 		}
 
-		bool maxLightsInScene = pointLights.size() == MAX_POINT_LIGHTS;
-		if (maxLightsInScene) ImGui::BeginDisabled();
+		bool reachedMaxPointLights = pointLights.size() == MAX_POINT_LIGHTS;
+		if (reachedMaxPointLights) ImGui::BeginDisabled();
 
 		if (ImGui::Button("Add Point Light")) {
 			PointLight light(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-			light.name = "Light " + std::to_string(pointLights.size() + 1);
+			light.name = "Point Light " + std::to_string(pointLights.size() + 1);
 			pointLights.push_back(std::move(light));
 		}
-		if (maxLightsInScene) ImGui::EndDisabled();
+		if (reachedMaxPointLights) ImGui::EndDisabled();
+
+		bool reachedMaxSpotlights = spotlights.size() == MAX_SPOTLIGHTS;
+		if (reachedMaxSpotlights) ImGui::BeginDisabled();
+
+		if (ImGui::Button("Add Spotlight")) {
+			Spotlight light(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+			light.name = "Spotlight " + std::to_string(spotlights.size() + 1);
+			spotlights.push_back(std::move(light));
+		}
+		if (reachedMaxSpotlights) ImGui::EndDisabled();
 
 		// rebuild this every frame so that the UI is united
 		std::vector<const char*> labels;
@@ -228,6 +254,11 @@ int main(void) {
 		}
 
 		for (PointLight& light: pointLights) {
+			selectables.push_back(&light);
+			labels.push_back(light.name.c_str());
+		}
+
+		for (Spotlight& light: spotlights) {
 			selectables.push_back(&light);
 			labels.push_back(light.name.c_str());
 		}
@@ -276,7 +307,14 @@ int main(void) {
 		colorShader.use();
 		colorShader.setMat4("view", camera.getViewMatrix());
 		colorShader.setMat4("projection", camera.getProjectionMatrix());
+
 		for (PointLight& light: pointLights) {
+			colorShader.setMat4("model", light.getModelMatrix());
+			light.material->apply();
+			light.model.render(colorShader);
+		}
+
+		for (Spotlight& light: spotlights) {
 			colorShader.setMat4("model", light.getModelMatrix());
 			light.material->apply();
 			light.model.render(colorShader);

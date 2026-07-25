@@ -31,6 +31,23 @@ struct alignas(16) PointLightGPUStruct {
 	float quadratic;
 };
 
+struct alignas(16) SpotlightGPUStruct {
+	vec4 position;
+	vec4 direction;
+
+	vec4 diffuse;
+	vec4 ambient;
+	vec4 specular;
+
+	float innerCutoff;
+	float outerCutoff;
+	
+	float constant;
+	float linear;
+	float quadratic;
+
+};
+
 // for UI purposes, sceneobjects and lights are the same
 // need to be able to have a homogenous vector of one object type that can represent objects and lights
 // that way, the ui can have just one index into that vector of both object types
@@ -162,6 +179,88 @@ public:
 		ImGui::DragFloat("Constant", &constant, 0.1f, 1.0f, 100.0f);
 		ImGui::DragFloat("Linear", &linear, 0.01f, 0.0f, 100.0f);
 		ImGui::DragFloat("Quadratic", &quadratic, 0.001f, 0.0f, 100.0f);
+		
+		ImGui::End();
+
+		material->color = diffuse;
+	}
+};
+
+class Spotlight: public Selectable {
+public:
+	vec3 position;
+	vec3 direction;
+
+	vec3 diffuse;
+	vec3 ambient;
+	vec3 specular;
+
+	float constant = 1.0f;
+	float linear = 0.09f;
+	float quadratic = 0.032f;
+
+	float innerCutoff = 0.3054326191f; // 17.5 radians 
+	float outerCutoff = 0.2181661565f; // 12.5 radians
+
+	Model model;
+	std::unique_ptr<ColorMaterial> material;
+
+	Spotlight(vec3 position, vec3 direction, vec3 diffuse, vec3 ambient, vec3 specular):
+		position(position),
+		direction(direction),
+		diffuse(diffuse),
+		ambient(ambient),
+		specular(specular),
+		model("models/cube.obj"),
+		material(std::make_unique<ColorMaterial>(getColorShader(), diffuse))
+	{}
+
+	SpotlightGPUStruct getGPUStruct() {
+		SpotlightGPUStruct s {
+			vec4(position, 0.0),
+			vec4(direction, 0.0),
+			vec4(diffuse, 0.0), 
+			vec4(ambient, 0.0), 
+			vec4(specular, 0.0), 
+			innerCutoff,
+			outerCutoff,
+			constant, 
+			linear, 
+			quadratic
+		};
+
+		return s;
+	}
+
+	glm::mat4 getModelMatrix() {
+		glm::mat4 modelMatrix = glm::mat4(1.0);
+		modelMatrix = glm::translate(modelMatrix, position);
+		modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+
+		return modelMatrix;
+	}
+
+	void drawInspector() {
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(500.0f, 500.0f), ImGuiCond_Always);
+		ImGui::Begin("Inspector");
+		ImGui::Text(name.c_str());
+		ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
+		ImGui::DragFloat3("Direction", glm::value_ptr(direction), 0.01f, -1.0f, 1.0f);
+		
+		ImGui::ColorEdit4("Diffuse", glm::value_ptr(diffuse), ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Ambient", glm::value_ptr(ambient), ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Specular", glm::value_ptr(specular), ImGuiColorEditFlags_NoInputs);
+
+		ImGui::Text("Attentuation");
+		ImGui::DragFloat("Constant", &constant, 0.1f, 1.0f, 100.0f);
+		ImGui::DragFloat("Linear", &linear, 0.01f, 0.0f, 100.0f);
+		ImGui::DragFloat("Quadratic", &quadratic, 0.001f, 0.0f, 100.0f);
+
+		ImGui::Text("Cutoffs");
+		ImGui::DragFloat("Inner", &innerCutoff, 0.1f, 0.0f, 1.0f);
+		ImGui::DragFloat("Outer", &outerCutoff, 0.01f, 0.0f, 1.0f);
 		
 		ImGui::End();
 
