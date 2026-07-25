@@ -101,29 +101,12 @@ int main(void) {
 	getDiffuseShader();
 	getLitShader();
 
-	// Shader lightShader("shaders/vertex.vs", "shaders/lightFragment.fs");
-
-	// shaders.setInt("material.diffuse", 0);
-	// shaders.setInt("material.specular", 1);
-	// shaders.setFloat("material.shininess", 32.0f);
 
 	// shaders.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
 	// shaders.setVec3("dirLight.ambient",  0.2f, 0.2f, 0.2f);
 	// shaders.setVec3("dirLight.diffuse",  0.5f, 0.5f, 0.5f);
 	// shaders.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
-	// glm::vec3 pointLightPositions[] = {
-	// 	glm::vec3( 0.7f,  0.2f,  2.0f),
-	// 	glm::vec3( 2.3f, -3.3f, -4.0f),
-	// 	glm::vec3(-4.0f,  2.0f, -12.0f),
-	// 	glm::vec3( 0.0f,  0.0f, -3.0f)
-	// };
-	// for (int i = 0; i < 4; i++) {
-	// 	shaders.setFloat("pointLights[" + std::to_string(i) + "].constant",  1.0f);
-	// 	shaders.setFloat("pointLights[" + std::to_string(i) + "].linear",    0.09f);
-	// 	shaders.setFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f);
-	// 	shaders.setVec3("pointLights[" + std::to_string(i) + "].position", pointLightPositions[i]);	
-	// }
 	
 	// shaders.setVec3("spotlight.position",  camera.eye);
 	// shaders.setVec3("spotlight.direction", camera.dir);
@@ -197,13 +180,16 @@ int main(void) {
 			bag.name = "Backpack " + std::to_string(sceneObjects.size() + 1);
 			sceneObjects.push_back(std::move(bag));
 		}
+
+		bool maxLightsInScene = pointLights.size() == MAX_POINT_LIGHTS;
+		if (maxLightsInScene) ImGui::BeginDisabled();
+
 		if (ImGui::Button("Add Point Light")) {
 			PointLight light(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-
-
 			light.name = "Light " + std::to_string(pointLights.size() + 1);
 			pointLights.push_back(std::move(light));
 		}
+		if (maxLightsInScene) ImGui::EndDisabled();
 
 		// rebuild this every frame so that the UI is united
 		std::vector<const char*> labels;
@@ -252,14 +238,6 @@ int main(void) {
 			shader.setVec3("camPos", camera.eye);
 			shader.setMat4("view", camera.getViewMatrix());
 			shader.setMat4("projection", camera.getProjectionMatrix());
-
-			shader.setFloat("pointLight.constant",  1.0f);
-			shader.setFloat("pointLight.linear",    0.09f);
-			shader.setFloat("pointLight.quadratic", 0.032f);
-			shader.setVec3("pointLight.position", glm::vec3(0.0f));	
-			shader.setVec3("pointLight.diffuse", glm::vec3(1.0f));	
-			shader.setVec3("pointLight.ambient", glm::vec3(1.0f));	
-			shader.setVec3("pointLight.specular", glm::vec3(1.0f));	
 
 			for (auto obj: objsWithProgram) {
 				glm::mat4 modelMatrix = obj->getModelMatrix();
