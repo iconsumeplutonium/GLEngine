@@ -29,6 +29,8 @@ float fov = 70.0f;
 const float WINDOW_WIDTH = 1280.0f;
 const float WINDOW_HEIGHT = 720.0f;
 
+const int MAX_POINT_LIGHTS = 10;
+
 // FirstPersonControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 OrbitControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -142,7 +144,7 @@ int main(void) {
 	unsigned int pointLightUBO;
 	glGenBuffers(1, &pointLightUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, pointLightUBO);
-	glBufferData(GL_UNIFORM_BUFFER, (sizeof(PointLightGPUStruct) * 10) + 4, nullptr, GL_DYNAMIC_DRAW); // +4 is the numlights uniform
+	glBufferData(GL_UNIFORM_BUFFER, (sizeof(PointLightGPUStruct) * MAX_POINT_LIGHTS) + 4, nullptr, GL_DYNAMIC_DRAW); // +4 is the numlights uniform
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, pointLightUBO); 
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -171,7 +173,7 @@ int main(void) {
 			PointLightGPUStruct pl = pointLights[i].getGPUStruct();
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(PointLightGPUStruct), &pl);
 		};
-		glBufferSubData(GL_UNIFORM_BUFFER, 10 * sizeof(PointLightGPUStruct), sizeof(int), &numPointLights);
+		glBufferSubData(GL_UNIFORM_BUFFER, MAX_POINT_LIGHTS * sizeof(PointLightGPUStruct), sizeof(int), &numPointLights);
 		
 
 		ImGui_ImplOpenGL3_NewFrame();

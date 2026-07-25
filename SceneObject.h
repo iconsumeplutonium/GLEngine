@@ -74,8 +74,8 @@ class SceneObject: public Selectable {
 		void drawInspector() {
 			ImGuiIO& io = ImGui::GetIO();
 			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
-			ImGui::SetNextWindowSize(ImVec2(500, 200.0f), ImGuiCond_Always);
-			ImGui::Begin("Transform");
+			ImGui::SetNextWindowSize(ImVec2(500.0f, 200.0f), ImGuiCond_Always);
+			ImGui::Begin("Inspector");
 			ImGui::Text(name.c_str());
 			ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
 			ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f);
@@ -132,7 +132,23 @@ public:
 	}
 
 	void drawInspector() {
-		return;
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(500.0f, 300.0f), ImGuiCond_Always);
+		ImGui::Begin("Inspector");
+		ImGui::Text(name.c_str());
+		ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
+		
+		ImGui::ColorEdit4("Diffuse", glm::value_ptr(diffuse), ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Ambient", glm::value_ptr(ambient), ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Specular", glm::value_ptr(specular), ImGuiColorEditFlags_NoInputs);
+
+		ImGui::Text("Attentuation");
+		ImGui::DragFloat("Constant", &constant, 0.1f, 1.0f, 100.0f);
+		ImGui::DragFloat("Linear", &linear, 0.01f, 0.0f, 100.0f);
+		ImGui::DragFloat("Quadratic", &quadratic, 0.001f, 0.0f, 100.0f);
+		
+		ImGui::End();
 	}
 };
 
