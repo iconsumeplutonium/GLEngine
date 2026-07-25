@@ -21,6 +21,9 @@
 #include <unordered_map>
 using namespace std;
 	
+float fpsRefreshInterval = 0.25f;
+float fpsDebounceTimer = 0.0f;
+int frameCount = 0;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -119,6 +122,7 @@ int main(void) {
 	// shaders.setVec3("spotlight.diffuse", 0.8f, 0.8f, 0.8f);
 	// shaders.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
 	
+	float displayFPS = 0.0f;
 	bool isSceneOpen = true;
 	std::vector<SceneObject> sceneObjects;
 	std::unordered_map<unsigned int, std::vector<SceneObject*>> shaderGroups;
@@ -135,16 +139,17 @@ int main(void) {
 		// since we skip rendering if minimized, this function doesnt get called so we can uniminimize
 		//moved it here so that it can still do its thing 
 		glfwPollEvents();
+		frameCount++;
 
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+		fpsDebounceTimer += deltaTime;
 
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		if (width == 0 || height == 0) continue; //skip rendering this frame if minimized
 
-		cout << "fps: " << 1.0f / deltaTime << "\r";
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -163,8 +168,22 @@ int main(void) {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
+		if (fpsDebounceTimer > fpsRefreshInterval) {
+			displayFPS = frameCount / fpsDebounceTimer;
+			frameCount = 0;
+			fpsDebounceTimer = 0.0f;
+		}
+
+		ImGui::SetNextWindowPos(ImVec2(0.0f, io.DisplaySize.y - 100), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiCond_Always);
+		ImGui::Begin("Stats");
+		ImGui::Text("FPS: %.1f", displayFPS);
+		ImGui::Text("Delta: %.1fms", deltaTime / 1000.0f);
+		ImGui::End();
+
+
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Always);
 		ImGui::Begin("Scene", &isSceneOpen);
 		ImGui::Text("Objects");
 		if (ImGui::Button("Add Primitive")) {
