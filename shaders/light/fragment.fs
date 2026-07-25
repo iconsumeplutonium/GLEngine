@@ -101,44 +101,7 @@ vec3 calculatePointLight(PointLight light, vec3 baseDiffuseColor, vec3 baseSpecu
 	return (diffuse + ambient + specular) * attenuation;
 }
 
-// vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 viewDir) {
-// 	vec3 lightDir = normalize(light.position - fragPos);
-// 	vec3 diffuseMapSample = texture(material.diffuse, vUv).xyz;
-// 	vec3 specularMapSample = texture(material.specular, vUv).xyz;
-
-//     float diff = max(dot(normal, lightDir), 0.0);
-
-//     vec3 reflectDir = reflect(-lightDir, normal);
-//     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-
-//     float d = length(light.position - fragPos);
-//     float attenuation = 1.0 / (light.constant + light.linear*d + light.quadratic*d*d);    
-
-//     float theta = dot(lightDir, normalize(-light.direction)); 
-//     float epsilon = light.innerCutoff - light.outerCutoff;
-//     float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
-
-//     vec3 ambient = light.ambient * diffuseMapSample;
-//     vec3 diffuse = light.diffuse * diff * diffuseMapSample;
-//     vec3 specular = light.specular * spec * specularMapSample;
-
-//     return (ambient + diffuse + specular) * intensity * attenuation;
-// }
-
-void main() {
-	vec3 dirToCamera = normalize(camPos - fragPos);
-	
-	vec3 baseDiffuseColor = hasDiffuseMap ? texture(diffuseMap, vUv).xyz : diffuseColor;
-	vec3 baseSpecularColor = hasSpecularMap ? texture(specularMap, vUv).xyz : specularColor;
-
-	if (numSpotlights == 0) { // todo: make this and
-		FragColor = vec4(0.1 * baseDiffuseColor, 1.0);
-		return;
-	}
-
-	Spotlight light = spotlights[0];
-
-
+vec3 calculateSpotlight(Spotlight light, vec3 baseDiffuseColor, vec3 baseSpecularColor, vec3 dirToCamera) {
 	vec3 dirToLight = normalize(light.position.xyz - fragPos);
 
 	float d = length(light.position.xyz - fragPos);
@@ -156,18 +119,33 @@ void main() {
 
     float theta = dot(-dirToLight, normalize(light.direction.xyz)); 
     float epsilon = light.innerCutoff - light.outerCutoff;
-    float intensity = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
+    float falloffCone = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
     vec3 ambient = 0.1 * baseDiffuseColor * light.ambient.xyz;
-    // vec3 diffuse = light.diffuse.xyz * diff * baseDiffuseColor;
-    // vec3 specular = light.specular.xyz * spec * baseSpecularColor;
 
+	return (diffuse*falloffCone + ambient + specular*falloffCone) * attenuation;
+}
 
+void main() {
+	vec3 dirToCamera = normalize(camPos - fragPos);
+	
+	vec3 baseDiffuseColor = hasDiffuseMap ? texture(diffuseMap, vUv).xyz : diffuseColor;
+	vec3 baseSpecularColor = hasSpecularMap ? texture(specularMap, vUv).xyz : specularColor;
 
-	// vec3 color = vec3(0.0);
-	// for (int i = 0; i < numPointLights; i++) {
-	// 	color += calculatePointLight(pointLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
-	// }
+	vec3 color = vec3(0.0);
 
-	FragColor = vec4((diffuse*intensity + ambient + specular*intensity) * attenuation, 1.0);
+	if (numPointLights > 0) {
+		for (int i = 0; i < numPointLights; i++) {
+			color += calculatePointLight(pointLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
+		}
+	}
+
+	if (numSpotlights > 0) {
+		for (int i = 0; i < numSpotlights; i++) {
+			color += calculateSpotlight(spotlights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
+		}
+	}
+
+	
+	FragColor = vec4(color, 1.0);
 }

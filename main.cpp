@@ -202,12 +202,19 @@ int main(void) {
 		ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Always);
 		ImGui::Begin("Scene", &isSceneOpen);
 		ImGui::Text("Objects");
-		if (ImGui::Button("Add Primitive")) {
+		if (ImGui::Button("Add Sphere")) {
 			SceneObject sphere("models/sphere.obj");
 			sphere.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
 			sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
 
 			sceneObjects.push_back(std::move(sphere));
+		}
+		if (ImGui::Button("Add Plane")) {
+			SceneObject plane("models/plane.obj");
+			plane.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
+			plane.name = "Plane " + std::to_string(sceneObjects.size() + 1);
+
+			sceneObjects.push_back(std::move(plane));
 		}
 		if (ImGui::Button("Add Backpack")) {
 			SceneObject bag("models/backpack/backpack.obj");
