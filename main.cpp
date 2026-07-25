@@ -187,11 +187,6 @@ int main(void) {
 		if (ImGui::Button("Add Primitive")) {
 			SceneObject sphere("models/sphere.obj");
 			sphere.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
-			// sphere.setMaterial(std::move(make_unique<LitMaterial>(litShader)), MaterialType::Lit);
-
-			// sphere.material = make_unique<LitMaterial>(litShader);
-			// sphere.materi
-
 			sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
 
 			sceneObjects.push_back(std::move(sphere));
@@ -207,8 +202,7 @@ int main(void) {
 
 
 			light.name = "Light " + std::to_string(pointLights.size() + 1);
-
-			pointLights.push_back(light);
+			pointLights.push_back(std::move(light));
 		}
 
 		// rebuild this every frame so that the UI is united
@@ -242,35 +236,6 @@ int main(void) {
 
 		if (selectables.size() > 0) {
 			selectables[index]->drawInspector();
-			// ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
-			// ImGui::SetNextWindowSize(ImVec2(500, 200.0f), ImGuiCond_Always);
-			// ImGui::Begin("Transform");
-			// ImGui::Text(sceneObjects[index].name.c_str());
-			// ImGui::DragFloat3("Position", glm::value_ptr(sceneObjects[index].position), 0.1f);
-			// ImGui::DragFloat3("Rotation", glm::value_ptr(sceneObjects[index].rotation), 0.1f);
-			// ImGui::DragFloat3("Scale",    glm::value_ptr(sceneObjects[index].scale),    0.1f);
-
-			// // if this function returns true, then currentMaterial changed
-			// static int currentMaterial = sceneObjects[index].material->getMaterialType();
-			// if (ImGui::Combo("Material", &currentMaterial, materialTypes, IM_COUNTOF(materialTypes))) {
-			// 	switch (currentMaterial) {
-			// 		case MaterialType::Color:
-			// 			sceneObjects[index].material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(1.0f));
-			// 			break;
-			// 		case MaterialType::Diffuse:
-			// 			sceneObjects[index].material = std::make_unique<DiffuseMaterial>(diffuseShader);
-			// 			break;
-			// 		case MaterialType::Lit:
-			// 			sceneObjects[index].material = std::make_unique<LitMaterial>(litShader);
-			// 			break;
-			// 	}
-			// }
-			
-			// ImGui::End();
-
-			// ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 200.0f), ImGuiCond_Always);
-			// ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiCond_Always);
-			// sceneObjects[index].material->materialSettingsPanel();
 		}
 
 		ImGui::EndFrame();
@@ -309,8 +274,18 @@ int main(void) {
 			}
 		}
 
+		// all lights use the same shader (the basic color shader)
+		Shader& colorShader = getColorShader();
+		colorShader.use();
+		colorShader.setMat4("view", camera.getViewMatrix());
+		colorShader.setMat4("projection", camera.getProjectionMatrix());
+		for (PointLight& light: pointLights) {
+			colorShader.setMat4("model", light.getModelMatrix());
+			light.material->apply();
+			light.model.render(colorShader);
+		}
 
-		// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 		glBindVertexArray(0);
 
 		ImGui::Render();

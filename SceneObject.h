@@ -38,6 +38,7 @@ class Selectable {
 public:
 	std::string name;
 	virtual void drawInspector() = 0;
+	virtual glm::mat4 getModelMatrix() = 0;
 };
 
 class SceneObject: public Selectable {
@@ -117,11 +118,17 @@ public:
 	float linear = 0.09f;
 	float quadratic = 0.032f;
 
-	PointLight(vec3 position, vec3 diffuse, vec3 ambient, vec3 specular): 
+	Model model;
+	std::unique_ptr<ColorMaterial> material;
+
+	PointLight(vec3 position, vec3 diffuse, vec3 ambient, vec3 specular):
+		position(position),
 		diffuse(diffuse),
 		ambient(ambient),
 		specular(specular),
-		position(position) {};
+		model("models/cube.obj"),
+		material(std::make_unique<ColorMaterial>(getColorShader(), diffuse))
+	{}
 
 	PointLightGPUStruct getGPUStruct() {
 		PointLightGPUStruct p {
@@ -129,6 +136,14 @@ public:
 		};
 
 		return p;
+	}
+
+	glm::mat4 getModelMatrix() {
+		glm::mat4 modelMatrix = glm::mat4(1.0);
+		modelMatrix = glm::translate(modelMatrix, position);
+		modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+
+		return modelMatrix;
 	}
 
 	void drawInspector() {
@@ -149,6 +164,8 @@ public:
 		ImGui::DragFloat("Quadratic", &quadratic, 0.001f, 0.0f, 100.0f);
 		
 		ImGui::End();
+
+		material->color = diffuse;
 	}
 };
 
