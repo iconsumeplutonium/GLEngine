@@ -14,11 +14,34 @@
 #include "Material.h"
 #include "Model.h"
 using namespace std;
+using namespace glm;
 
-class SceneObject {
+
+// even though there is a PointLightClass, i need a struct so the data can be packed
+// and uploaded to the GPU. 
+struct alignas(16) PointLightGPUStruct {
+	vec4 position;
+
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+
+	float constant;
+	float linear;
+	float quadratic;
+};
+
+// for UI purposes, sceneobjects and lights are the same
+// need to be able to have a homogenous vector of one object type that can represent objects and lights
+// that way, the ui can have just one index into that vector of both object types
+class Selectable {
+public:
+	std::string name;
+	virtual void drawInspector() = 0;
+};
+
+class SceneObject: public Selectable {
 	public:
-		std::string name;
-
 		glm::vec3 position = glm::vec3(0.0f);
 		glm::vec3 rotation = glm::vec3(0.0f);
 		glm::vec3 scale = glm::vec3(1.0f);
@@ -47,6 +70,70 @@ class SceneObject {
 
 			return modelMatrix;
 		}
+
+		void drawInspector() {
+			ImGuiIO& io = ImGui::GetIO();
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(500, 200.0f), ImGuiCond_Always);
+			ImGui::Begin("Transform");
+			ImGui::Text(name.c_str());
+			ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
+			ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f);
+			ImGui::DragFloat3("Scale",    glm::value_ptr(scale),    0.1f);
+
+			// if this function returns true, then currentMaterial changed
+			static int currentMaterial = material->getMaterialType();
+			if (ImGui::Combo("Material", &currentMaterial, materialTypes, IM_COUNTOF(materialTypes))) {
+				switch (currentMaterial) {
+					case MaterialType::Color:
+						material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(1.0f));
+						break;
+					case MaterialType::Diffuse:
+						material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
+						break;
+					case MaterialType::Lit:
+						material = std::make_unique<LitMaterial>(getLitShader());
+						break;
+				}
+			}
+			
+			ImGui::End();
+
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 200.0f), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiCond_Always);
+			material->materialSettingsPanel();
+		}
+};
+
+class PointLight: public Selectable {
+public:
+	vec3 position;
+
+	vec3 diffuse;
+	vec3 ambient;
+	vec3 specular;
+
+	float constant = 1.0f;
+	float linear = 0.09f;
+	float quadratic = 0.032f;
+
+	PointLight(vec3 position, vec3 diffuse, vec3 ambient, vec3 specular): 
+		diffuse(diffuse),
+		ambient(ambient),
+		specular(specular),
+		position(position) {};
+
+	PointLightGPUStruct getGPUStruct() {
+		PointLightGPUStruct p {
+			vec4(position, 0.0), vec4(diffuse, 0.0), vec4(ambient, 0.0), vec4(specular, 0.0), constant, linear, quadratic
+		};
+
+		return p;
+	}
+
+	void drawInspector() {
+		return;
+	}
 };
 
 

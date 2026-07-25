@@ -18,6 +18,26 @@ enum MaterialType {
 	Lit
 };
 
+const char* materialTypes[] = {"Color Material", "Diffuse Material", "Lit Material"};
+
+// "lazily initialized accessor function"
+// Shader's constructor will only get called once (first time tfunction is called)
+// then return sthe same isntance
+Shader& getColorShader() {
+	static Shader colorShader("shaders/basic/basic.vs", "shaders/basic/basic.fs"); // solid color only
+	return colorShader;
+}
+
+Shader& getDiffuseShader() {
+	static Shader diffuseShader("shaders/diffuse/vertex.vs", "shaders/diffuse/fragment.fs"); // diffuse
+	return diffuseShader;
+}
+
+Shader& getLitShader() {
+	static Shader litShader("shaders/light/vertex.vs", "shaders/light/fragment.fs"); // lighting
+	return litShader;
+}
+
 class Material {
 	public:
 		Shader& shader;

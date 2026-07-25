@@ -10,8 +10,6 @@
 #include "Camera.h"
 #include "FirstPersonControls.h"
 #include "OrbitControls.h"
-// #include "Texture.h"
-// #include "Mesh.h"
 #include "Model.h"
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
@@ -60,8 +58,8 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
 int main(void) {
 	cout << "starting main" << endl;
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Da Engine", nullptr, nullptr);
@@ -96,14 +94,10 @@ int main(void) {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
-
-
-	Shader colorShader("shaders/basic/basic.vs", "shaders/basic/basic.fs"); // solid color only
-	Shader diffuseShader("shaders/diffuse/vertex.vs", "shaders/diffuse/fragment.fs"); // diffuse
-	Shader litShader("shaders/light/vertex.vs", "shaders/light/fragment.fs"); // lighting
-
-	const char* materialTypes[] = {"Color Material", "Diffuse Material", "Lit Material"};
-
+	// call em once so that the constructor runs and everything else can cccess these globally
+	getColorShader();
+	getDiffuseShader();
+	getLitShader();
 
 	// Shader lightShader("shaders/vertex.vs", "shaders/lightFragment.fs");
 
@@ -143,7 +137,13 @@ int main(void) {
 	bool isSceneOpen = true;
 	std::vector<SceneObject> sceneObjects;
 	std::unordered_map<unsigned int, std::vector<SceneObject*>> shaderGroups;
+	vector<PointLight> pointLights;
 
+	unsigned int pointLightUBO;
+	glGenBuffers(1, &pointLightUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, pointLightUBO);
+	glBufferData(GL_UNIFORM_BUFFER, (sizeof(PointLightGPUStruct) * 10) + 4, nullptr, GL_DYNAMIC_DRAW); // +4 is the numlights uniform
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, pointLightUBO); 
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	while (!glfwWindowShouldClose(window)) {
@@ -163,6 +163,16 @@ int main(void) {
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// upload all pointlights at once via ubo (not to be confused with the adblocker of the same acronym)
+		glBindBuffer(GL_UNIFORM_BUFFER, pointLightUBO);
+		int numPointLights = std::min((int) pointLights.size(), 10);
+		for (int i = 0; i < numPointLights; i++) {
+			int offset = i * sizeof(PointLightGPUStruct);
+			PointLightGPUStruct pl = pointLights[i].getGPUStruct();
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(PointLightGPUStruct), &pl);
+		};
+		glBufferSubData(GL_UNIFORM_BUFFER, 10 * sizeof(PointLightGPUStruct), sizeof(int), &numPointLights);
+		
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -174,7 +184,7 @@ int main(void) {
 		ImGui::Text("Objects");
 		if (ImGui::Button("Add Primitive")) {
 			SceneObject sphere("models/sphere.obj");
-			sphere.material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(0.0f, 0.0f, 1.0f));
+			sphere.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
 			// sphere.setMaterial(std::move(make_unique<LitMaterial>(litShader)), MaterialType::Lit);
 
 			// sphere.material = make_unique<LitMaterial>(litShader);
@@ -186,27 +196,41 @@ int main(void) {
 		}
 		if (ImGui::Button("Add Backpack")) {
 			SceneObject bag("models/backpack/backpack.obj");
-			bag.material = std::make_unique<DiffuseMaterial>(diffuseShader);
-			// bag.material = make_unique<LitMaterial>(litShader);
-			// bag.setMaterial(std::move(make_unique<LitMaterial>(litShader)), MaterialType::Lit);
-
+			bag.material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
 			bag.name = "Backpack " + std::to_string(sceneObjects.size() + 1);
-
 			sceneObjects.push_back(std::move(bag));
 		}
+		if (ImGui::Button("Add Point Light")) {
+			PointLight light(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+
+
+			light.name = "Light " + std::to_string(pointLights.size() + 1);
+
+			pointLights.push_back(light);
+		}
+
+		// rebuild this every frame so that the UI is united
+		std::vector<const char*> labels;
+		std::vector<Selectable*> selectables;
 
 		// group the objects by shader (rebuilding it every frame)
 		// simple solution for now, might make this better later
 		// needs to come after the last menu because a sphere could be added to the sceneObjects,
 		// something something vector reallocation, dangling pointers, program crashes
-		std::vector<const char*> labels;
 		shaderGroups.clear();
 		for (SceneObject& obj: sceneObjects) {
+			selectables.push_back(&obj);
 			labels.push_back(obj.name.c_str());
-
+			
 			unsigned int shaderID = obj.material->shader.program;
 			shaderGroups[shaderID].push_back(&obj);
 		}
+
+		for (PointLight& light: pointLights) {
+			selectables.push_back(&light);
+			labels.push_back(light.name.c_str());
+		}
+
 
 		static int index = 0;
 		ImGui::Text("Scene");
@@ -214,36 +238,37 @@ int main(void) {
 		ImGui::End();
 		
 
-		if (sceneObjects.size() > 0) {
-			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
-			ImGui::SetNextWindowSize(ImVec2(500, 200.0f), ImGuiCond_Always);
-			ImGui::Begin("Transform");
-			ImGui::Text(sceneObjects[index].name.c_str());
-			ImGui::DragFloat3("Position", glm::value_ptr(sceneObjects[index].position), 0.1f);
-			ImGui::DragFloat3("Rotation", glm::value_ptr(sceneObjects[index].rotation), 0.1f);
-			ImGui::DragFloat3("Scale",    glm::value_ptr(sceneObjects[index].scale),    0.1f);
+		if (selectables.size() > 0) {
+			selectables[index]->drawInspector();
+			// ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
+			// ImGui::SetNextWindowSize(ImVec2(500, 200.0f), ImGuiCond_Always);
+			// ImGui::Begin("Transform");
+			// ImGui::Text(sceneObjects[index].name.c_str());
+			// ImGui::DragFloat3("Position", glm::value_ptr(sceneObjects[index].position), 0.1f);
+			// ImGui::DragFloat3("Rotation", glm::value_ptr(sceneObjects[index].rotation), 0.1f);
+			// ImGui::DragFloat3("Scale",    glm::value_ptr(sceneObjects[index].scale),    0.1f);
 
-			// if this function returns true, then currentMaterial changed
-			static int currentMaterial = sceneObjects[index].material->getMaterialType();
-			if (ImGui::Combo("Material", &currentMaterial, materialTypes, IM_COUNTOF(materialTypes))) {
-				switch (currentMaterial) {
-					case MaterialType::Color:
-						sceneObjects[index].material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(1.0f));
-						break;
-					case MaterialType::Diffuse:
-						sceneObjects[index].material = std::make_unique<DiffuseMaterial>(diffuseShader);
-						break;
-					case MaterialType::Lit:
-						sceneObjects[index].material = std::make_unique<LitMaterial>(litShader);
-						break;
-				}
-			}
+			// // if this function returns true, then currentMaterial changed
+			// static int currentMaterial = sceneObjects[index].material->getMaterialType();
+			// if (ImGui::Combo("Material", &currentMaterial, materialTypes, IM_COUNTOF(materialTypes))) {
+			// 	switch (currentMaterial) {
+			// 		case MaterialType::Color:
+			// 			sceneObjects[index].material = std::make_unique<ColorMaterial>(colorShader, glm::vec3(1.0f));
+			// 			break;
+			// 		case MaterialType::Diffuse:
+			// 			sceneObjects[index].material = std::make_unique<DiffuseMaterial>(diffuseShader);
+			// 			break;
+			// 		case MaterialType::Lit:
+			// 			sceneObjects[index].material = std::make_unique<LitMaterial>(litShader);
+			// 			break;
+			// 	}
+			// }
 			
-			ImGui::End();
+			// ImGui::End();
 
-			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 200.0f), ImGuiCond_Always);
-			ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiCond_Always);
-			sceneObjects[index].material->materialSettingsPanel();
+			// ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 200.0f), ImGuiCond_Always);
+			// ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiCond_Always);
+			// sceneObjects[index].material->materialSettingsPanel();
 		}
 
 		ImGui::EndFrame();

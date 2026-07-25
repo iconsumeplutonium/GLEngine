@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 
 uniform sampler2D diffuseMap;
 uniform vec3 diffuseColor;
@@ -27,15 +27,16 @@ struct DirectionalLight {
 };
 
 struct PointLight {
-	vec3 position;
+	vec4 position;
+
+	vec4 diffuse;
+	vec4 ambient;
+	vec4 specular;
 
 	float constant;
 	float linear;
 	float quadratic;
-
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
+	// float _bullshitpadding;
 };
 
 struct Spotlight {
@@ -54,13 +55,17 @@ struct Spotlight {
 	vec3 specular;
 };
 
-#define NUM_POINT_LIGHTS 4
+#define MAX_POINT_LIGHTS 10
+layout (std140, binding = 0) uniform PointLights {
+	PointLight pointLights[MAX_POINT_LIGHTS];
+	int numPointLights;
+};
 
 // uniform Light light;
 // uniform DirectionalLight dirLight;
 // uniform PointLight pointLights[NUM_POINT_LIGHTS];
 // uniform Spotlight spotlight;
-uniform PointLight pointLight;
+// uniform PointLight pointLight;
 
 uniform vec3 camPos;
 
@@ -145,25 +150,34 @@ void main() {
 
 	// vec3 diffuseMapSample = texture(material.diffuse, vUv).xyz;
 	// vec3 specularMapSample = texture(material.specular, vUv).xyz;
+	
+	vec3 baseDiffuseColor = hasDiffuseMap ? texture(diffuseMap, vUv).xyz : diffuseColor;
 
-	vec3 dirToLight = normalize(pointLight.position - fragPos);
+	vec3 ambient = 0.1 * baseDiffuseColor;
 
-	float d = length(pointLight.position - fragPos);
+
+	if (numPointLights == 0) {
+		FragColor = vec4(ambient, 1.0);
+		return;
+	}
+
+	PointLight pointLight = pointLights[0];
+
+
+	vec3 dirToLight = normalize(pointLight.position.xyz - fragPos);
+
+	float d = length(pointLight.position.xyz - fragPos);
 	float attenuation = 1.0 / (pointLight.constant + pointLight.linear*d + pointLight.quadratic*d*d);
 
 
-	
-	vec3 baseDiffuseColor = hasDiffuseMap ? texture(diffuseMap, vUv).xyz : diffuseColor;
 	float nDotL = max(dot(dirToLight, normal), 0.0);
-	vec3 diffuse = nDotL * baseDiffuseColor * pointLight.diffuse;
+	vec3 diffuse = nDotL * baseDiffuseColor * pointLight.diffuse.xyz;
 
 	vec3 baseSpecularColor = hasSpecularMap ? texture(specularMap, vUv).xyz : specularColor;
 	vec3 halfway = normalize(dirToLight + dirToCamera);
 	float specularStrength = max(dot(halfway, normal), 0.0f);
 	float spec = pow(specularStrength, specularExp);
-	vec3 specular = spec * baseSpecularColor * pointLight.specular;
-
-	vec3 ambient = 0.1 * baseDiffuseColor;
+	vec3 specular = spec * baseSpecularColor * pointLight.specular.xyz;
 	
 
 
