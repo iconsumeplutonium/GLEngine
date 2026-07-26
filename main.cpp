@@ -18,6 +18,7 @@
 #include <vector>
 #include "SceneObject.h"
 #include "Material.h"
+#include "UIHelper.h"
 #include <unordered_map>
 using namespace std;
 	
@@ -38,8 +39,20 @@ const int MAX_SPOTLIGHTS = 10;
 // FirstPersonControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 OrbitControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+struct Primitive {
+	string modelPath;
+	string displayName;
+};
 
+std::unordered_map<string, Primitive> primitives = {
+	{"sphere",    Primitive {.modelPath = "models/sphere.obj",    .displayName = "Sphere"   }},
+	{"cube",      Primitive {.modelPath = "models/cube.obj",      .displayName = "Cube"     }},
+	{"plane",     Primitive {.modelPath = "models/plane.obj",     .displayName = "Plane"    }},
+	{"icosphere", Primitive {.modelPath = "models/icosphere.obj", .displayName = "Icosphere"}},
+	{"cylinder",  Primitive {.modelPath = "models/cylinder.obj",  .displayName = "Cylinder" }},
+	{"cone",      Primitive {.modelPath = "models/cone.obj",      .displayName = "Cone"     }},
+	{"torus",     Primitive {.modelPath = "models/torus.obj",     .displayName = "Torus"    }},
+};
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
@@ -190,32 +203,83 @@ int main(void) {
 			fpsDebounceTimer = 0.0f;
 		}
 
-		ImGui::SetNextWindowPos(ImVec2(0.0f, io.DisplaySize.y - 100), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiCond_Always);
-		ImGui::Begin("Stats");
-		ImGui::Text("FPS: %.1f", displayFPS);
-		ImGui::Text("Delta: %.1fms", deltaTime / 1000.0f);
-		ImGui::End();
+		// ImGui::SetNextWindowPos(ImVec2(0.0f, io.DisplaySize.y - 100), ImGuiCond_Always);
+		// ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiCond_Always);
+		// ImGui::Begin("Stats");
+		// ImGui::Text("FPS: %.1f", displayFPS);
+		// ImGui::Text("Delta: %.1fms", deltaTime / 1000.0f);
+		// ImGui::End();
+		UI::DrawFPSPanel(io, displayFPS, deltaTime);
 
 
 		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Always);
 		ImGui::Begin("Scene", &isSceneOpen);
 		ImGui::Text("Objects");
-		if (ImGui::Button("Add Sphere")) {
-			SceneObject sphere("models/sphere.obj");
-			sphere.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
-			sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
+		// if (ImGui::Button("Add Sphere")) {
+		// 	SceneObject sphere("models/sphere.obj");
+		// 	sphere.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
+		// 	sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
 
-			sceneObjects.push_back(std::move(sphere));
-		}
-		if (ImGui::Button("Add Plane")) {
-			SceneObject plane("models/plane.obj");
-			plane.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
-			plane.name = "Plane " + std::to_string(sceneObjects.size() + 1);
+		// 	sceneObjects.push_back(std::move(sphere));
+		// }
+		// if (ImGui::Button("Add Plane")) {
+		// 	SceneObject plane("models/plane.obj");
+		// 	plane.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
+		// 	plane.name = "Plane " + std::to_string(sceneObjects.size() + 1);
 
-			sceneObjects.push_back(std::move(plane));
+		// 	sceneObjects.push_back(std::move(plane));
+		// }
+		
+		if (ImGui::Button("Add Primitive")) {
+			ImGui::OpenPopup("my popup");
 		}
+
+		if (ImGui::BeginPopup("my popup")) {
+			bool wasSelected = false;
+			Primitive selectedPrimitive;
+
+			if (ImGui::Button("Sphere")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["sphere"];
+			}
+			if (ImGui::Button("Cube")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["cube"];
+			}
+			if (ImGui::Button("Plane")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["plane"];
+			}
+			if (ImGui::Button("Icosphere")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["icosphere"];
+			}
+			if (ImGui::Button("Cone")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["cone"];
+			}
+			if (ImGui::Button("Cylinder")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["cylinder"];
+			}
+			if (ImGui::Button("Torus")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["torus"];
+			}
+
+
+			if (wasSelected) {
+				SceneObject obj(selectedPrimitive.modelPath);
+				obj.material = std::make_unique<ColorMaterial>(getColorShader(), vec3(0.0f, 0.0f, 1.0f));
+				obj.name = selectedPrimitive.displayName + " " + std::to_string(sceneObjects.size() + 1);
+				sceneObjects.push_back(std::move(obj));
+				ImGui::CloseCurrentPopup();
+			}
+			
+			ImGui::EndPopup();
+		}
+
 		if (ImGui::Button("Add Backpack")) {
 			SceneObject bag("models/backpack/backpack.obj");
 			bag.material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
