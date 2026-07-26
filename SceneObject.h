@@ -49,6 +49,14 @@ struct alignas(16) SpotlightGPUStruct {
 
 };
 
+struct alignas(16) DirLightGPUStruct {
+	vec4 direction;
+
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+};
+
 // for UI purposes, sceneobjects and lights are the same
 // need to be able to have a homogenous vector of one object type that can represent objects and lights
 // that way, the ui can have just one index into that vector of both object types
@@ -312,6 +320,83 @@ public:
 		ImGui::SeparatorText("Cutoffs");
 		ImGui::DragFloat("Inner", &innerCutoff, 0.1f, 0.0f, 1.0f);
 		ImGui::DragFloat("Outer", &outerCutoff, 0.01f, 0.0f, 1.0f);
+		
+		ImGui::End();
+
+		material->color = diffuse;
+	}
+};
+
+class DirectionalLight: public Selectable {
+public:
+	vec3 direction;
+
+	vec3 diffuse;
+	vec3 ambient;
+	vec3 specular;
+
+	Model model;
+	std::unique_ptr<ColorMaterial> material;
+
+	DirectionalLight(vec3 direction, vec3 diffuse, vec3 ambient, vec3 specular):
+		direction(direction),
+		diffuse(diffuse),
+		ambient(ambient),
+		specular(specular),
+		model("models/cube.obj"),
+		material(std::make_unique<ColorMaterial>(getColorShader(), diffuse))
+	{}
+
+	DirLightGPUStruct getGPUStruct() {
+		DirLightGPUStruct s {
+			vec4(direction, 0.0),
+			vec4(diffuse, 0.0), 
+			vec4(ambient, 0.0), 
+			vec4(specular, 0.0), 
+		};
+
+		return s;
+	}
+
+	glm::mat4 getModelMatrix() {
+		// the lookAt matrix where right is (1, 0, 0), up is (0, 1, 0), and position is (0, 0, 0)
+		// https://learnopengl.com/Getting-started/Camera
+		glm::mat4 modelMatrix = glm::mat4(
+			       1.0f,        0.0f,        0.0f,    0.0f,
+			       0.0f,        1.0f,        0.0f,    0.0f,
+			direction.x, direction.y, direction.z,    0.0f,
+			       0.0f,        0.0f,        0.0f,    1.0f
+		);
+
+		modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+
+		return modelMatrix;
+	}
+	
+	Shader& getShader() {
+		return material->shader;
+	}
+
+	void render() {
+		material->shader.setMat4("model", getModelMatrix());
+		material->apply();
+
+		model.render(material->shader);
+	}
+
+	void drawInspector() {
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(500.0f, 500.0f), ImGuiCond_Always);
+		ImGui::Begin("Inspector");
+		ImGui::SeparatorText("General");
+		ImGui::InputText("Name", &name);
+		ImGui::DragFloat3("Direction", glm::value_ptr(direction), 0.01f, -1.0f, 1.0f);
+		
+		ImGui::SeparatorText("Light Colors");
+		ImGui::ColorEdit4("Diffuse", glm::value_ptr(diffuse), ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Ambient", glm::value_ptr(ambient), ImGuiColorEditFlags_NoInputs);
+		ImGui::ColorEdit4("Specular", glm::value_ptr(specular), ImGuiColorEditFlags_NoInputs);
 		
 		ImGui::End();
 

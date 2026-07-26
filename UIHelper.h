@@ -96,9 +96,10 @@ namespace UI {
 		}
 	}
 
-	void DrawAddLightsButton(vector<shared_ptr<Selectable>>& sceneObjects, vector<weak_ptr<PointLight>>& pointLights, vector<weak_ptr<Spotlight>>& spotlights, int& selectedIndex, const int MAX_POINT_LIGHTS, const int MAX_SPOTLIGHTS) {
+	void DrawAddLightsButton(vector<shared_ptr<Selectable>>& sceneObjects, vector<weak_ptr<PointLight>>& pointLights, vector<weak_ptr<Spotlight>>& spotlights, vector<weak_ptr<DirectionalLight>>& dirLights, int& selectedIndex, const int MAX_POINT_LIGHTS, const int MAX_SPOTLIGHTS, const int MAX_DIR_LIGHTS) {
 		bool reachedMaxPointLights = pointLights.size() == MAX_POINT_LIGHTS;
 		bool reachedMaxSpotlights = spotlights.size() == MAX_SPOTLIGHTS;
+		bool reachedMaxDirLights = dirLights.size() == MAX_DIR_LIGHTS;
 		
 		if (ImGui::Button("Add Light")) {
 			ImGui::OpenPopup("light popup");
@@ -130,6 +131,17 @@ namespace UI {
 				sceneObjects.push_back(std::move(light));
 			}
 			if (reachedMaxSpotlights) ImGui::EndDisabled();			
+
+			if (reachedMaxDirLights) ImGui::BeginDisabled();
+			if (ImGui::Button("Directional Light")) {
+				wasSelected = true;
+				shared_ptr<DirectionalLight> light = make_shared<DirectionalLight>(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+				light->name = "Directional LIght " + std::to_string(dirLights.size() + 1);
+				
+				dirLights.push_back(weak_ptr<DirectionalLight>(light));
+				sceneObjects.push_back(std::move(light));
+			}
+			if (reachedMaxDirLights) ImGui::EndDisabled();			
 
 
 			if (wasSelected) {

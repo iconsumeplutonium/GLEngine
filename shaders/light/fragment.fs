@@ -49,11 +49,15 @@ struct Spotlight {
 
 #define MAX_POINT_LIGHTS 10
 #define MAX_SPOTLIGHTS 10
-layout (std140, binding = 0) uniform PointLights {
+#define MAX_DIR_LIGHTS 10
+layout (std140, binding = 0) uniform Lights {
 	PointLight pointLights[MAX_POINT_LIGHTS];
 	Spotlight spotlights[MAX_SPOTLIGHTS];
+	DirectionalLight dirLights[MAX_DIR_LIGHTS];
+
 	int numPointLights;
 	int numSpotlights;
+	int numDirLights;
 };
 
 uniform vec3 camPos;

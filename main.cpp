@@ -35,6 +35,7 @@ const float WINDOW_HEIGHT = 720.0f;
 
 const int MAX_POINT_LIGHTS = 10;
 const int MAX_SPOTLIGHTS = 10;
+const int MAX_DIR_LIGHTS = 10;
 
 // FirstPersonControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 OrbitControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -132,11 +133,15 @@ int main(void) {
 	// need a separate pointer to the lights so taht we can quickly find them and upload their data to the gpu
 	vector<weak_ptr<PointLight>> pointLights;
 	vector<weak_ptr<Spotlight>> spotlights;
+	vector<weak_ptr<DirectionalLight>> dirLights;
 
 	unsigned int lightUBO;
 	glGenBuffers(1, &lightUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, lightUBO);
-	int size = (sizeof(PointLightGPUStruct) * MAX_POINT_LIGHTS) + (sizeof(SpotlightGPUStruct) * MAX_SPOTLIGHTS) + 8; // +4 for each numlights uniform
+	int size = (sizeof(PointLightGPUStruct) * MAX_POINT_LIGHTS) + 
+				(sizeof(SpotlightGPUStruct) * MAX_SPOTLIGHTS) +
+				(sizeof(DirLightGPUStruct) * MAX_DIR_LIGHTS) + 12; // +4 for each numlights uniform
+
 	glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW); 
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO); 
 
@@ -167,6 +172,10 @@ int main(void) {
 			if (auto test = weakLight.lock()) return false;
 			return true;
 		}), spotlights.end());
+		dirLights.erase(std::remove_if(dirLights.begin(), dirLights.end(), [](weak_ptr<DirectionalLight>& weakLight) {
+			if (auto test = weakLight.lock()) return false;
+			return true;
+		}), dirLights.end());
 
 		// upload all lights at once via ubo (not to be confused with the adblocker of the same acronym)
 		int baseOffset = 0;
@@ -191,9 +200,22 @@ int main(void) {
 		};
 
 		baseOffset += MAX_SPOTLIGHTS * sizeof(SpotlightGPUStruct);
+		int numDirLights = dirLights.size();
+		for (int i = 0; i < numDirLights; i++) {
+			shared_ptr<DirectionalLight> light = dirLights[i].lock();
+
+			int offset = baseOffset + i * sizeof(DirLightGPUStruct);
+			DirLightGPUStruct dl = light->getGPUStruct();
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(DirLightGPUStruct), &dl);
+		};
+
+		baseOffset += MAX_SPOTLIGHTS * sizeof(DirLightGPUStruct);
 		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numPointLights);
 		baseOffset += sizeof(int);
 		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numSpotlights);
+		baseOffset += sizeof(int);
+		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numDirLights);
+
 		
 		if (fpsDebounceTimer > fpsRefreshInterval) {
 			displayFPS = frameCount / fpsDebounceTimer;
@@ -214,7 +236,7 @@ int main(void) {
 
 		UI::DrawRenderModeSwitch();
 		UI::DrawPrimitiveAddButton(sceneObjects, selectedIndex);
-		UI::DrawAddLightsButton(sceneObjects, pointLights, spotlights, selectedIndex, MAX_POINT_LIGHTS, MAX_SPOTLIGHTS);
+		UI::DrawAddLightsButton(sceneObjects, pointLights, spotlights, dirLights, selectedIndex, MAX_POINT_LIGHTS, MAX_SPOTLIGHTS, MAX_DIR_LIGHTS);
 		
 
 		if (ImGui::Button("Add Backpack")) {
