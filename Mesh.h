@@ -80,11 +80,8 @@ public:
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
 		}
 
-		// std::cout << textures.size() << std::endl;
-
-		// glActiveTexture(GL_TEXTURE0);
-
 		glBindVertexArray(VAO);
+		// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);		
 	};

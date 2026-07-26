@@ -10,6 +10,7 @@
 #include <memory>
 #include <cmath>
 #include "include/stb_image/stb_image.h"
+#include "imgui/imgui_stdlib.h"
 #include "Shader.h"
 #include "Material.h"
 #include "Model.h"
@@ -93,10 +94,12 @@ class SceneObject: public Selectable {
 
 		void drawInspector() {
 			ImGuiIO& io = ImGui::GetIO();
+			char buf[128] = "";
+
 			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
 			ImGui::SetNextWindowSize(ImVec2(500.0f, 200.0f), ImGuiCond_Always);
 			ImGui::Begin("Inspector");
-			ImGui::Text(name.c_str());
+			ImGui::InputText("Name", &name);
 			ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
 			ImGui::DragFloat3("Rotation", glm::value_ptr(rotation), 0.1f);
 			ImGui::DragFloat3("Scale",    glm::value_ptr(scale),    0.1f);
@@ -201,7 +204,7 @@ public:
 		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(500.0f, 300.0f), ImGuiCond_Always);
 		ImGui::Begin("Inspector");
-		ImGui::Text(name.c_str());
+		ImGui::InputText("Name", &name);
 		ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
 		
 		ImGui::ColorEdit4("Diffuse", glm::value_ptr(diffuse), ImGuiColorEditFlags_NoInputs);
@@ -289,7 +292,7 @@ public:
 		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(500.0f, 500.0f), ImGuiCond_Always);
 		ImGui::Begin("Inspector");
-		ImGui::Text(name.c_str());
+		ImGui::InputText("Name", &name);
 		ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
 		ImGui::DragFloat3("Direction", glm::value_ptr(direction), 0.01f, -1.0f, 1.0f);
 		
