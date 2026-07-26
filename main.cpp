@@ -126,12 +126,12 @@ int main(void) {
 	float displayFPS = 0.0f;
 	bool isSceneOpen = true;
 	int selectedIndex = 0;
-	std::vector<unique_ptr<Selectable>> sceneObjects;
-	std::unordered_map<unsigned int, std::vector<Selectable*>> shaderGroups;
+	std::vector<shared_ptr<Selectable>> sceneObjects;
+	std::unordered_map<unsigned int, std::vector<shared_ptr<Selectable>>> shaderGroups;
 
 	// need a separate pointer to the lights so taht we can quickly find them and upload their data to the gpu
-	vector<PointLight*> pointLights;
-	vector<Spotlight*> spotlights;
+	vector<weak_ptr<PointLight>> pointLights;
+	vector<weak_ptr<Spotlight>> spotlights;
 
 	unsigned int lightUBO;
 	glGenBuffers(1, &lightUBO);
@@ -156,24 +156,37 @@ int main(void) {
 		glfwGetFramebufferSize(window, &width, &height);
 		if (width == 0 || height == 0) continue; //skip rendering this frame if minimized
 
-
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		// filter out the references to deleted lights
+		pointLights.erase(std::remove_if(pointLights.begin(), pointLights.end(), [](weak_ptr<PointLight>& weakLight) {
+			if (auto test = weakLight.lock()) return false;
+			return true;
+		}), pointLights.end());
+		spotlights.erase(std::remove_if(spotlights.begin(), spotlights.end(), [](weak_ptr<Spotlight>& weakLight) {
+			if (auto test = weakLight.lock()) return false;
+			return true;
+		}), spotlights.end());
 
 		// upload all lights at once via ubo (not to be confused with the adblocker of the same acronym)
 		int baseOffset = 0;
 		glBindBuffer(GL_UNIFORM_BUFFER, lightUBO);
 		int numPointLights = pointLights.size();
 		for (int i = 0; i < numPointLights; i++) {
+			shared_ptr<PointLight> light = pointLights[i].lock();
+
 			int offset = baseOffset + (i * sizeof(PointLightGPUStruct));
-			PointLightGPUStruct pl = pointLights[i]->getGPUStruct();
+			PointLightGPUStruct pl = light->getGPUStruct();
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(PointLightGPUStruct), &pl);
 		};
 
 		baseOffset = MAX_POINT_LIGHTS * sizeof(PointLightGPUStruct);
 		int numSpotlights = spotlights.size();
 		for (int i = 0; i < numSpotlights; i++) {
+			shared_ptr<Spotlight> light = spotlights[i].lock();
+
 			int offset = baseOffset + i * sizeof(SpotlightGPUStruct);
-			SpotlightGPUStruct pl = spotlights[i]->getGPUStruct();
+			SpotlightGPUStruct pl = light->getGPUStruct();
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(SpotlightGPUStruct), &pl);
 		};
 
@@ -205,7 +218,7 @@ int main(void) {
 		
 
 		if (ImGui::Button("Add Backpack")) {
-			unique_ptr<SceneObject> bag = make_unique<SceneObject>("models/backpack/backpack.obj");
+			shared_ptr<SceneObject> bag = make_unique<SceneObject>("models/backpack/backpack.obj");
 			bag->material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
 			bag->name = "Backpack " + std::to_string(sceneObjects.size() + 1);
 			sceneObjects.push_back(std::move(bag));
@@ -225,15 +238,21 @@ int main(void) {
 			labels.push_back(obj->name.c_str());
 			
 			unsigned int shaderID = obj->getShader().program;
-			shaderGroups[shaderID].push_back(obj.get());
+			shaderGroups[shaderID].push_back(obj);
 		}
 
-		ImGui::SeparatorText("Scene");
-		ImGui::ListBox("##SceneListBox", &selectedIndex, labels.data(), labels.size(), std::min((int) labels.size(), 20));
-		ImGui::End();
+		int markedForDeletion = -1;
+		UI::DrawDeleteItemContextMenu(markedForDeletion, selectedIndex, labels);
+
+		// if something was rqeusted to be deleted, get rid of it
+		if (markedForDeletion >= 0 && sceneObjects.size() > 0) {
+			sceneObjects.erase(sceneObjects.begin() + markedForDeletion);
+			selectedIndex = -1;
+			markedForDeletion = -1;
+		}
 		
 
-		if (sceneObjects.size() > 0) {
+		if (sceneObjects.size() > 0 && selectedIndex >= 0) {
 			sceneObjects[selectedIndex]->drawInspector();
 		}
 

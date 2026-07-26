@@ -41,7 +41,7 @@ namespace UI {
 		ImGui::End();
 	}
 
-	void DrawPrimitiveAddButton(vector<unique_ptr<Selectable>>& sceneObjects, int& selectedIndex) {
+	void DrawPrimitiveAddButton(vector<shared_ptr<Selectable>>& sceneObjects, int& selectedIndex) {
 		ImGui::SeparatorText("Stuff");
 
 		if (ImGui::Button("Add Primitive")) {
@@ -83,7 +83,7 @@ namespace UI {
 
 
 			if (wasSelected) {
-				unique_ptr<SceneObject> obj = make_unique<SceneObject>(selectedPrimitive.modelPath);
+				shared_ptr<SceneObject> obj = make_unique<SceneObject>(selectedPrimitive.modelPath);
 				obj->material = std::make_unique<ColorMaterial>(getColorShader(), vec3(0.0f, 0.0f, 1.0f));
 				obj->name = selectedPrimitive.displayName + " " + std::to_string(sceneObjects.size() + 1);
 
@@ -96,8 +96,7 @@ namespace UI {
 		}
 	}
 
-
-	void DrawAddLightsButton(vector<unique_ptr<Selectable>>& sceneObjects, vector<PointLight*>& pointLights, vector<Spotlight*>& spotlights, int& selectedIndex, const int MAX_POINT_LIGHTS, const int MAX_SPOTLIGHTS) {
+	void DrawAddLightsButton(vector<shared_ptr<Selectable>>& sceneObjects, vector<weak_ptr<PointLight>>& pointLights, vector<weak_ptr<Spotlight>>& spotlights, int& selectedIndex, const int MAX_POINT_LIGHTS, const int MAX_SPOTLIGHTS) {
 		bool reachedMaxPointLights = pointLights.size() == MAX_POINT_LIGHTS;
 		bool reachedMaxSpotlights = spotlights.size() == MAX_SPOTLIGHTS;
 		
@@ -111,10 +110,10 @@ namespace UI {
 			if (reachedMaxPointLights) ImGui::BeginDisabled();
 			if (ImGui::Button("Point Light")) {
 				wasSelected = true;
-				unique_ptr<PointLight> light = make_unique<PointLight>(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+				shared_ptr<PointLight> light = make_shared<PointLight>(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
 				light->name = "Point Light " + std::to_string(pointLights.size() + 1);
 
-				pointLights.push_back(light.get());
+				pointLights.push_back(weak_ptr<PointLight>(light));
 				sceneObjects.push_back(std::move(light));
 			}
 			if (reachedMaxPointLights) ImGui::EndDisabled();
@@ -124,10 +123,10 @@ namespace UI {
 			if (reachedMaxSpotlights) ImGui::BeginDisabled();
 			if (ImGui::Button("Spotlight")) {
 				wasSelected = true;
-				unique_ptr<Spotlight> light = make_unique<Spotlight>(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+				shared_ptr<Spotlight> light = make_shared<Spotlight>(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
 				light->name = "Spotlight " + std::to_string(spotlights.size() + 1);
 				
-				spotlights.push_back(light.get());
+				spotlights.push_back(weak_ptr<Spotlight>(light));
 				sceneObjects.push_back(std::move(light));
 			}
 			if (reachedMaxSpotlights) ImGui::EndDisabled();			
@@ -161,6 +160,33 @@ namespace UI {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 		if (!renderModeAtStartOfFrame) ImGui::EndDisabled();
+	}
+
+	void DrawDeleteItemContextMenu(int& markedForDeletion, int& selectedIndex, vector<const char*>& labels) {
+		ImGui::SeparatorText("Scene");
+		// ImGui::ListBox("##SceneListBox", &selectedIndex, labels.data(), labels.size(), std::min((int) labels.size(), 20));
+
+		if (ImGui::BeginListBox("##SceneListBox")) {
+			for (int i = 0; i < labels.size(); i++) {
+				bool isSelected = (selectedIndex == i);
+
+				ImGui::PushID(i);
+				if (ImGui::Selectable(labels[i], isSelected)) {
+					selectedIndex = i;
+				}
+
+				if (ImGui::BeginPopupContextItem("ItemContextMenu")) {
+					if (ImGui::MenuItem("Delete")) {
+						markedForDeletion = i;
+					}
+
+					ImGui::EndPopup();
+				}
+				ImGui::PopID();
+			}
+			ImGui::EndListBox();
+		}
+		ImGui::End();
 	}
 };
 
