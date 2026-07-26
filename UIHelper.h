@@ -135,7 +135,7 @@ namespace UI {
 			if (reachedMaxDirLights) ImGui::BeginDisabled();
 			if (ImGui::Button("Directional Light")) {
 				wasSelected = true;
-				shared_ptr<DirectionalLight> light = make_shared<DirectionalLight>(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+				shared_ptr<DirectionalLight> light = make_shared<DirectionalLight>(glm::vec3(0.0f, -1.0f, 0.0f));
 				light->name = "Directional LIght " + std::to_string(dirLights.size() + 1);
 				
 				dirLights.push_back(weak_ptr<DirectionalLight>(light));

@@ -331,18 +331,15 @@ class DirectionalLight: public Selectable {
 public:
 	vec3 direction;
 
-	vec3 diffuse;
-	vec3 ambient;
-	vec3 specular;
+	vec3 diffuse = vec3(0.5f);
+	vec3 ambient = vec3(0.2f);
+	vec3 specular = vec3(1.0f);
 
 	Model model;
 	std::unique_ptr<ColorMaterial> material;
 
-	DirectionalLight(vec3 direction, vec3 diffuse, vec3 ambient, vec3 specular):
+	DirectionalLight(vec3 direction):
 		direction(direction),
-		diffuse(diffuse),
-		ambient(ambient),
-		specular(specular),
 		model("models/cube.obj"),
 		material(std::make_unique<ColorMaterial>(getColorShader(), diffuse))
 	{}
@@ -359,18 +356,7 @@ public:
 	}
 
 	glm::mat4 getModelMatrix() {
-		// the lookAt matrix where right is (1, 0, 0), up is (0, 1, 0), and position is (0, 0, 0)
-		// https://learnopengl.com/Getting-started/Camera
-		glm::mat4 modelMatrix = glm::mat4(
-			       1.0f,        0.0f,        0.0f,    0.0f,
-			       0.0f,        1.0f,        0.0f,    0.0f,
-			direction.x, direction.y, direction.z,    0.0f,
-			       0.0f,        0.0f,        0.0f,    1.0f
-		);
-
-		modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
-
-		return modelMatrix;
+		return glm::mat4(1.0f);
 	}
 	
 	Shader& getShader() {
@@ -378,10 +364,7 @@ public:
 	}
 
 	void render() {
-		material->shader.setMat4("model", getModelMatrix());
-		material->apply();
-
-		model.render(material->shader);
+		return;
 	}
 
 	void drawInspector() {

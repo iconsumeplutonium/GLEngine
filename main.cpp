@@ -117,12 +117,6 @@ int main(void) {
 	getColorShader();
 	getDiffuseShader();
 	getLitShader();
-
-
-	// shaders.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-	// shaders.setVec3("dirLight.ambient",  0.2f, 0.2f, 0.2f);
-	// shaders.setVec3("dirLight.diffuse",  0.5f, 0.5f, 0.5f);
-	// shaders.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 	
 	float displayFPS = 0.0f;
 	bool isSceneOpen = true;

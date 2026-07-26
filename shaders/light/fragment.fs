@@ -68,22 +68,20 @@ in vec2 vUv;
 
 out vec4 FragColor;
 
-// vec3 calculateDirLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
-// 	vec3 lightDir = normalize(-light.direction);
-// 	vec3 diffuseMapSample = texture(material.diffuse, vUv).xyz;
-// 	vec3 specularMapSample = texture(material.specular, vUv).xyz;
+vec3 calculateDirLight(DirectionalLight light, vec3 baseDiffuseColor, vec3 baseSpecularColor, vec3 dirToCamera) {
+	vec3 dirToLight = normalize(-light.direction);
 
-// 	vec3 ambient = light.ambient * diffuseMapSample;
+	vec3 ambient = light.ambient * baseDiffuseColor;
 
-// 	float nDotL = max(dot(normal, lightDir), 0.0);
-// 	vec3 diffuse = light.diffuse * nDotL * diffuseMapSample;
+	float nDotL = max(dot(vNormal, dirToLight), 0.0);
+	vec3 diffuse = light.diffuse * nDotL * baseDiffuseColor;
 
-// 	vec3 reflectDir = reflect(-lightDir, normal);
-// 	float spec = max(dot(viewDir, reflectDir), 0.0);
-// 	vec3 specular = pow(spec, material.shininess) * specularMapSample * light.specular;
+	vec3 halfway = normalize(dirToCamera + dirToLight);
+	float spec = max(dot(halfway, vNormal), 0.0);
+	vec3 specular = pow(spec, specularExp) * baseSpecularColor * light.specular;
 
-// 	return diffuse + ambient + specular;
-// }
+	return diffuse + ambient + specular;
+}
 
 vec3 calculatePointLight(PointLight light, vec3 baseDiffuseColor, vec3 baseSpecularColor, vec3 dirToCamera) {
 	vec3 ambient = 0.1 * baseDiffuseColor * light.ambient.xyz;
@@ -150,6 +148,11 @@ void main() {
 		}
 	}
 
+	if (numDirLights > 0) {
+		for (int i = 0; i < numDirLights; i++) {
+			color += calculateDirLight(dirLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
+		}
+	}
 	
 	FragColor = vec4(color, 1.0);
 }
