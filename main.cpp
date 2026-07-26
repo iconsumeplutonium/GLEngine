@@ -138,15 +138,20 @@ int main(void) {
 	
 	float displayFPS = 0.0f;
 	bool isSceneOpen = true;
-	std::vector<SceneObject> sceneObjects;
-	std::unordered_map<unsigned int, std::vector<SceneObject*>> shaderGroups;
-	vector<PointLight> pointLights;
-	vector<Spotlight> spotlights;
+	int selectedIndex = 0;
+	std::vector<unique_ptr<Selectable>> sceneObjects;
+	std::unordered_map<unsigned int, std::vector<Selectable*>> shaderGroups;
+
+	// need a separate pointer to the lights so taht we can quickly find them and upload their data to the gpu
+	vector<PointLight*> pointLights;
+	vector<Spotlight*> spotlights;
+	// static int numPointLights = 0;
+	// static int numSpotlights = 0;
 
 	unsigned int lightUBO;
 	glGenBuffers(1, &lightUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, lightUBO);
-	int size = (sizeof(PointLightGPUStruct) * MAX_POINT_LIGHTS) + (sizeof(SpotlightGPUStruct) * MAX_SPOTLIGHTS) + 8; // +4 is the numlights uniform
+	int size = (sizeof(PointLightGPUStruct) * MAX_POINT_LIGHTS) + (sizeof(SpotlightGPUStruct) * MAX_SPOTLIGHTS) + 8; // +4 for each numlights uniform
 	glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW); 
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO); 
 
@@ -175,7 +180,7 @@ int main(void) {
 		int numPointLights = pointLights.size();
 		for (int i = 0; i < numPointLights; i++) {
 			int offset = baseOffset + (i * sizeof(PointLightGPUStruct));
-			PointLightGPUStruct pl = pointLights[i].getGPUStruct();
+			PointLightGPUStruct pl = pointLights[i]->getGPUStruct();
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(PointLightGPUStruct), &pl);
 		};
 
@@ -183,7 +188,7 @@ int main(void) {
 		int numSpotlights = spotlights.size();
 		for (int i = 0; i < numSpotlights; i++) {
 			int offset = baseOffset + i * sizeof(SpotlightGPUStruct);
-			SpotlightGPUStruct pl = spotlights[i].getGPUStruct();
+			SpotlightGPUStruct pl = spotlights[i]->getGPUStruct();
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(SpotlightGPUStruct), &pl);
 		};
 
@@ -216,26 +221,11 @@ int main(void) {
 		ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Always);
 		ImGui::Begin("Scene", &isSceneOpen);
 		ImGui::Text("Objects");
-		// if (ImGui::Button("Add Sphere")) {
-		// 	SceneObject sphere("models/sphere.obj");
-		// 	sphere.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
-		// 	sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
-
-		// 	sceneObjects.push_back(std::move(sphere));
-		// }
-		// if (ImGui::Button("Add Plane")) {
-		// 	SceneObject plane("models/plane.obj");
-		// 	plane.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
-		// 	plane.name = "Plane " + std::to_string(sceneObjects.size() + 1);
-
-		// 	sceneObjects.push_back(std::move(plane));
-		// }
-		
 		if (ImGui::Button("Add Primitive")) {
-			ImGui::OpenPopup("my popup");
+			ImGui::OpenPopup("primitive popup");
 		}
 
-		if (ImGui::BeginPopup("my popup")) {
+		if (ImGui::BeginPopup("primitive popup")) {
 			bool wasSelected = false;
 			Primitive selectedPrimitive;
 
@@ -270,10 +260,11 @@ int main(void) {
 
 
 			if (wasSelected) {
-				SceneObject obj(selectedPrimitive.modelPath);
-				obj.material = std::make_unique<ColorMaterial>(getColorShader(), vec3(0.0f, 0.0f, 1.0f));
-				obj.name = selectedPrimitive.displayName + " " + std::to_string(sceneObjects.size() + 1);
+				unique_ptr<SceneObject> obj = make_unique<SceneObject>(selectedPrimitive.modelPath);
+				obj->material = std::make_unique<ColorMaterial>(getColorShader(), vec3(0.0f, 0.0f, 1.0f));
+				obj->name = selectedPrimitive.displayName + " " + std::to_string(sceneObjects.size() + 1);
 				sceneObjects.push_back(std::move(obj));
+				selectedIndex = sceneObjects.size() - 1;
 				ImGui::CloseCurrentPopup();
 			}
 			
@@ -281,19 +272,23 @@ int main(void) {
 		}
 
 		if (ImGui::Button("Add Backpack")) {
-			SceneObject bag("models/backpack/backpack.obj");
-			bag.material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
-			bag.name = "Backpack " + std::to_string(sceneObjects.size() + 1);
+			unique_ptr<SceneObject> bag = make_unique<SceneObject>("models/backpack/backpack.obj");
+			bag->material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
+			bag->name = "Backpack " + std::to_string(sceneObjects.size() + 1);
 			sceneObjects.push_back(std::move(bag));
+			selectedIndex = sceneObjects.size() - 1;
 		}
 
 		bool reachedMaxPointLights = pointLights.size() == MAX_POINT_LIGHTS;
 		if (reachedMaxPointLights) ImGui::BeginDisabled();
 
 		if (ImGui::Button("Add Point Light")) {
-			PointLight light(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-			light.name = "Point Light " + std::to_string(pointLights.size() + 1);
-			pointLights.push_back(std::move(light));
+			unique_ptr<PointLight> light = make_unique<PointLight>(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+			light->name = "Point Light " + std::to_string(pointLights.size() + 1);
+
+			pointLights.push_back(light.get());
+			sceneObjects.push_back(std::move(light));
+			selectedIndex = sceneObjects.size() - 1;
 		}
 		if (reachedMaxPointLights) ImGui::EndDisabled();
 
@@ -301,48 +296,39 @@ int main(void) {
 		if (reachedMaxSpotlights) ImGui::BeginDisabled();
 
 		if (ImGui::Button("Add Spotlight")) {
-			Spotlight light(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-			light.name = "Spotlight " + std::to_string(spotlights.size() + 1);
-			spotlights.push_back(std::move(light));
+			unique_ptr<Spotlight> light = make_unique<Spotlight>(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+			light->name = "Spotlight " + std::to_string(spotlights.size() + 1);
+			
+			spotlights.push_back(light.get());
+			sceneObjects.push_back(std::move(light));
+			selectedIndex = sceneObjects.size() - 1;
 		}
 		if (reachedMaxSpotlights) ImGui::EndDisabled();
 
 		// rebuild this every frame so that the UI is united
 		std::vector<const char*> labels;
-		std::vector<Selectable*> selectables;
+		// std::vector<Selectable*> selectables;
 
 		// group the objects by shader (rebuilding it every frame)
 		// simple solution for now, might make this better later
 		// needs to come after the last menu because a sphere could be added to the sceneObjects,
 		// something something vector reallocation, dangling pointers, program crashes
 		shaderGroups.clear();
-		for (SceneObject& obj: sceneObjects) {
-			selectables.push_back(&obj);
-			labels.push_back(obj.name.c_str());
+		for (auto& obj: sceneObjects) {
+			// selectables.push_back(&obj);
+			labels.push_back(obj->name.c_str());
 			
-			unsigned int shaderID = obj.material->shader.program;
-			shaderGroups[shaderID].push_back(&obj);
+			unsigned int shaderID = obj->getShader().program;
+			shaderGroups[shaderID].push_back(obj.get());
 		}
 
-		for (PointLight& light: pointLights) {
-			selectables.push_back(&light);
-			labels.push_back(light.name.c_str());
-		}
-
-		for (Spotlight& light: spotlights) {
-			selectables.push_back(&light);
-			labels.push_back(light.name.c_str());
-		}
-
-
-		static int index = 0;
 		ImGui::Text("Scene");
-		ImGui::ListBox("##SceneListBox", &index, labels.data(), labels.size(), std::min((int) labels.size(), 20));
+		ImGui::ListBox("##SceneListBox", &selectedIndex, labels.data(), labels.size(), std::min((int) labels.size(), 20));
 		ImGui::End();
 		
 
-		if (selectables.size() > 0) {
-			selectables[index]->drawInspector();
+		if (sceneObjects.size() > 0) {
+			sceneObjects[selectedIndex]->drawInspector();
 		}
 
 		ImGui::EndFrame();
@@ -354,43 +340,16 @@ int main(void) {
 		for (auto& [program, objsWithProgram]: shaderGroups) {
 			if (objsWithProgram.size() == 0) continue;
 
-			Shader& shader = objsWithProgram[0]->material->shader;
+			Shader& shader = objsWithProgram[0]->getShader();
 			shader.use();
 			shader.setVec3("camPos", camera.eye);
 			shader.setMat4("view", camera.getViewMatrix());
 			shader.setMat4("projection", camera.getProjectionMatrix());
 
 			for (auto obj: objsWithProgram) {
-				glm::mat4 modelMatrix = obj->getModelMatrix();
-				glm::mat4 normalMatrix = glm::inverse(glm::transpose(modelMatrix));
-				shader.setBool("hasDiffuseMap", false);
-				shader.setBool("hasSpecularMap", false); // if the mesh actually has textures, these become true in mesh.render()
-
-				obj->material->shader.setMat4("model", modelMatrix);
-				obj->material->shader.setMat3("normalMatrix", normalMatrix);
-				obj->material->apply();
-				obj->model.render(shader);
+				obj->render();
 			}
 		}
-
-		// all lights use the same shader (the basic color shader)
-		Shader& colorShader = getColorShader();
-		colorShader.use();
-		colorShader.setMat4("view", camera.getViewMatrix());
-		colorShader.setMat4("projection", camera.getProjectionMatrix());
-
-		for (PointLight& light: pointLights) {
-			colorShader.setMat4("model", light.getModelMatrix());
-			light.material->apply();
-			light.model.render(colorShader);
-		}
-
-		for (Spotlight& light: spotlights) {
-			colorShader.setMat4("model", light.getModelMatrix());
-			light.material->apply();
-			light.model.render(colorShader);
-		}
-
 
 		glBindVertexArray(0);
 

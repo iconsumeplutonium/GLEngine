@@ -56,6 +56,8 @@ public:
 	std::string name;
 	virtual void drawInspector() = 0;
 	virtual glm::mat4 getModelMatrix() = 0;
+	virtual Shader& getShader() = 0;
+	virtual void render() = 0;
 };
 
 class SceneObject: public Selectable {
@@ -121,6 +123,24 @@ class SceneObject: public Selectable {
 			ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiCond_Always);
 			material->materialSettingsPanel();
 		}
+
+		Shader& getShader() {
+			return material->shader;
+		}
+
+		void render() {
+			glm::mat4 modelMatrix = getModelMatrix();
+			glm::mat4 normalMatrix = glm::inverse(glm::transpose(modelMatrix));
+
+			material->shader.setBool("hasDiffuseMap", false);
+			material->shader.setBool("hasSpecularMap", false);  // if the mesh actually has textures, these become true in mesh.render()
+
+			material->shader.setMat4("model", modelMatrix);
+			material->shader.setMat3("normalMatrix", normalMatrix);
+			material->apply();
+
+			model.render(material->shader);
+		}
 };
 
 class PointLight: public Selectable {
@@ -162,6 +182,19 @@ public:
 
 		return modelMatrix;
 	}
+
+	Shader& getShader() {
+		return material->shader;
+	}
+
+
+	void render() {
+		material->shader.setMat4("model", getModelMatrix());
+		material->apply();
+
+		model.render(material->shader);
+	}
+
 
 	void drawInspector() {
 		ImGuiIO& io = ImGui::GetIO();
@@ -238,6 +271,17 @@ public:
 		modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
 
 		return modelMatrix;
+	}
+	
+	Shader& getShader() {
+		return material->shader;
+	}
+
+	void render() {
+		material->shader.setMat4("model", getModelMatrix());
+		material->apply();
+
+		model.render(material->shader);
 	}
 
 	void drawInspector() {
