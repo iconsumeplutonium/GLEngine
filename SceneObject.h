@@ -202,16 +202,18 @@ public:
 	void drawInspector() {
 		ImGuiIO& io = ImGui::GetIO();
 		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(500.0f, 300.0f), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(500.0f, 400.0f), ImGuiCond_Always);
 		ImGui::Begin("Inspector");
+		ImGui::SeparatorText("General");
 		ImGui::InputText("Name", &name);
 		ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
 		
+		ImGui::SeparatorText("Light Colors");
 		ImGui::ColorEdit4("Diffuse", glm::value_ptr(diffuse), ImGuiColorEditFlags_NoInputs);
 		ImGui::ColorEdit4("Ambient", glm::value_ptr(ambient), ImGuiColorEditFlags_NoInputs);
 		ImGui::ColorEdit4("Specular", glm::value_ptr(specular), ImGuiColorEditFlags_NoInputs);
 
-		ImGui::Text("Attentuation");
+		ImGui::SeparatorText("Attentuation");
 		ImGui::DragFloat("Constant", &constant, 0.1f, 1.0f, 100.0f);
 		ImGui::DragFloat("Linear", &linear, 0.01f, 0.0f, 100.0f);
 		ImGui::DragFloat("Quadratic", &quadratic, 0.001f, 0.0f, 100.0f);
@@ -292,20 +294,22 @@ public:
 		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 500.0f, 0.0f), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(500.0f, 500.0f), ImGuiCond_Always);
 		ImGui::Begin("Inspector");
+		ImGui::SeparatorText("General");
 		ImGui::InputText("Name", &name);
 		ImGui::DragFloat3("Position", glm::value_ptr(position), 0.1f);
 		ImGui::DragFloat3("Direction", glm::value_ptr(direction), 0.01f, -1.0f, 1.0f);
 		
+		ImGui::SeparatorText("Light Colors");
 		ImGui::ColorEdit4("Diffuse", glm::value_ptr(diffuse), ImGuiColorEditFlags_NoInputs);
 		ImGui::ColorEdit4("Ambient", glm::value_ptr(ambient), ImGuiColorEditFlags_NoInputs);
 		ImGui::ColorEdit4("Specular", glm::value_ptr(specular), ImGuiColorEditFlags_NoInputs);
 
-		ImGui::Text("Attentuation");
+		ImGui::SeparatorText("Attentuation");
 		ImGui::DragFloat("Constant", &constant, 0.1f, 1.0f, 100.0f);
 		ImGui::DragFloat("Linear", &linear, 0.01f, 0.0f, 100.0f);
 		ImGui::DragFloat("Quadratic", &quadratic, 0.001f, 0.0f, 100.0f);
 
-		ImGui::Text("Cutoffs");
+		ImGui::SeparatorText("Cutoffs");
 		ImGui::DragFloat("Inner", &innerCutoff, 0.1f, 0.0f, 1.0f);
 		ImGui::DragFloat("Outer", &outerCutoff, 0.01f, 0.0f, 1.0f);
 		

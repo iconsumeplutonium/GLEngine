@@ -198,8 +198,8 @@ int main(void) {
 		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_Always);
 		ImGui::Begin("Heirarchy");
-		ImGui::Text("Objects");
 
+		UI::DrawRenderModeSwitch();
 		UI::DrawPrimitiveAddButton(sceneObjects, selectedIndex);
 		UI::DrawAddLightsButton(sceneObjects, pointLights, spotlights, selectedIndex, MAX_POINT_LIGHTS, MAX_SPOTLIGHTS);
 		
@@ -228,7 +228,7 @@ int main(void) {
 			shaderGroups[shaderID].push_back(obj.get());
 		}
 
-		ImGui::Text("Scene");
+		ImGui::SeparatorText("Scene");
 		ImGui::ListBox("##SceneListBox", &selectedIndex, labels.data(), labels.size(), std::min((int) labels.size(), 20));
 		ImGui::End();
 		

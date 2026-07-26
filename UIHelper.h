@@ -29,6 +29,8 @@ std::unordered_map<string, Primitive> primitives = {
 	{"torus",     Primitive {.modelPath = "models/torus.obj",     .displayName = "Torus"    }},
 };
 
+static bool showWireFrame = false;
+
 namespace UI {
 	void DrawFPSPanel(ImGuiIO& io, float displayFPS, float deltaTime) {
 		ImGui::SetNextWindowPos(ImVec2(0.0f, io.DisplaySize.y - 100), ImGuiCond_Always);
@@ -40,6 +42,8 @@ namespace UI {
 	}
 
 	void DrawPrimitiveAddButton(vector<unique_ptr<Selectable>>& sceneObjects, int& selectedIndex) {
+		ImGui::SeparatorText("Stuff");
+
 		if (ImGui::Button("Add Primitive")) {
 			ImGui::OpenPopup("primitive popup");
 		}
@@ -136,6 +140,27 @@ namespace UI {
 			
 			ImGui::EndPopup();
 		}
+	}
+
+	void DrawRenderModeSwitch() {
+		ImGui::SeparatorText("Render Mode");
+		bool renderModeAtStartOfFrame = showWireFrame;
+
+		if (renderModeAtStartOfFrame) ImGui::BeginDisabled();
+		if (ImGui::Button("Wireframe")) {
+			showWireFrame = true;
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		if (renderModeAtStartOfFrame) ImGui::EndDisabled();
+
+		ImGui::SameLine();
+
+		if (!renderModeAtStartOfFrame) ImGui::BeginDisabled();
+		if (ImGui::Button("Solid")) {
+			showWireFrame = false;
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+		if (!renderModeAtStartOfFrame) ImGui::EndDisabled();
 	}
 };
 
