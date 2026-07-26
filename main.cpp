@@ -39,20 +39,20 @@ const int MAX_SPOTLIGHTS = 10;
 // FirstPersonControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 OrbitControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-struct Primitive {
-	string modelPath;
-	string displayName;
-};
+// struct Primitive {
+// 	string modelPath;
+// 	string displayName;
+// };
 
-std::unordered_map<string, Primitive> primitives = {
-	{"sphere",    Primitive {.modelPath = "models/sphere.obj",    .displayName = "Sphere"   }},
-	{"cube",      Primitive {.modelPath = "models/cube.obj",      .displayName = "Cube"     }},
-	{"plane",     Primitive {.modelPath = "models/plane.obj",     .displayName = "Plane"    }},
-	{"icosphere", Primitive {.modelPath = "models/icosphere.obj", .displayName = "Icosphere"}},
-	{"cylinder",  Primitive {.modelPath = "models/cylinder.obj",  .displayName = "Cylinder" }},
-	{"cone",      Primitive {.modelPath = "models/cone.obj",      .displayName = "Cone"     }},
-	{"torus",     Primitive {.modelPath = "models/torus.obj",     .displayName = "Torus"    }},
-};
+// std::unordered_map<string, Primitive> primitives = {
+// 	{"sphere",    Primitive {.modelPath = "models/sphere.obj",    .displayName = "Sphere"   }},
+// 	{"cube",      Primitive {.modelPath = "models/cube.obj",      .displayName = "Cube"     }},
+// 	{"plane",     Primitive {.modelPath = "models/plane.obj",     .displayName = "Plane"    }},
+// 	{"icosphere", Primitive {.modelPath = "models/icosphere.obj", .displayName = "Icosphere"}},
+// 	{"cylinder",  Primitive {.modelPath = "models/cylinder.obj",  .displayName = "Cylinder" }},
+// 	{"cone",      Primitive {.modelPath = "models/cone.obj",      .displayName = "Cone"     }},
+// 	{"torus",     Primitive {.modelPath = "models/torus.obj",     .displayName = "Torus"    }},
+// };
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
@@ -75,7 +75,6 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
 }
 
 int main(void) {
-	cout << "starting main" << endl;
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -123,18 +122,6 @@ int main(void) {
 	// shaders.setVec3("dirLight.ambient",  0.2f, 0.2f, 0.2f);
 	// shaders.setVec3("dirLight.diffuse",  0.5f, 0.5f, 0.5f);
 	// shaders.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
-
-	
-	// shaders.setVec3("spotlight.position",  camera.eye);
-	// shaders.setVec3("spotlight.direction", camera.dir);
-	// shaders.setFloat("spotlight.innerCutoff", glm::cos(glm::radians(12.5f)));
-	// shaders.setFloat("spotlight.outerCutoff", glm::cos(glm::radians(17.5f)));
-	// shaders.setFloat("spotlight.constant",  1.0f);
-	// shaders.setFloat("spotlight.linear",    0.09f);
-	// shaders.setFloat("spotlight.quadratic", 0.032f);
-	// shaders.setVec3("spotlight.ambient", 0.1f, 0.1f, 0.1f);
-	// shaders.setVec3("spotlight.diffuse", 0.8f, 0.8f, 0.8f);
-	// shaders.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
 	
 	float displayFPS = 0.0f;
 	bool isSceneOpen = true;
@@ -145,8 +132,6 @@ int main(void) {
 	// need a separate pointer to the lights so taht we can quickly find them and upload their data to the gpu
 	vector<PointLight*> pointLights;
 	vector<Spotlight*> spotlights;
-	// static int numPointLights = 0;
-	// static int numSpotlights = 0;
 
 	unsigned int lightUBO;
 	glGenBuffers(1, &lightUBO);
@@ -197,79 +182,27 @@ int main(void) {
 		baseOffset += sizeof(int);
 		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numSpotlights);
 		
-
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
 		if (fpsDebounceTimer > fpsRefreshInterval) {
 			displayFPS = frameCount / fpsDebounceTimer;
 			frameCount = 0;
 			fpsDebounceTimer = 0.0f;
 		}
 
-		// ImGui::SetNextWindowPos(ImVec2(0.0f, io.DisplaySize.y - 100), ImGuiCond_Always);
-		// ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiCond_Always);
-		// ImGui::Begin("Stats");
-		// ImGui::Text("FPS: %.1f", displayFPS);
-		// ImGui::Text("Delta: %.1fms", deltaTime / 1000.0f);
-		// ImGui::End();
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
 		UI::DrawFPSPanel(io, displayFPS, deltaTime);
 
-
 		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Always);
-		ImGui::Begin("Scene", &isSceneOpen);
+		ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_Always);
+		ImGui::Begin("Heirarchy");
 		ImGui::Text("Objects");
-		if (ImGui::Button("Add Primitive")) {
-			ImGui::OpenPopup("primitive popup");
-		}
 
-		if (ImGui::BeginPopup("primitive popup")) {
-			bool wasSelected = false;
-			Primitive selectedPrimitive;
-
-			if (ImGui::Button("Sphere")) {
-				wasSelected = true;
-				selectedPrimitive = primitives["sphere"];
-			}
-			if (ImGui::Button("Cube")) {
-				wasSelected = true;
-				selectedPrimitive = primitives["cube"];
-			}
-			if (ImGui::Button("Plane")) {
-				wasSelected = true;
-				selectedPrimitive = primitives["plane"];
-			}
-			if (ImGui::Button("Icosphere")) {
-				wasSelected = true;
-				selectedPrimitive = primitives["icosphere"];
-			}
-			if (ImGui::Button("Cone")) {
-				wasSelected = true;
-				selectedPrimitive = primitives["cone"];
-			}
-			if (ImGui::Button("Cylinder")) {
-				wasSelected = true;
-				selectedPrimitive = primitives["cylinder"];
-			}
-			if (ImGui::Button("Torus")) {
-				wasSelected = true;
-				selectedPrimitive = primitives["torus"];
-			}
-
-
-			if (wasSelected) {
-				unique_ptr<SceneObject> obj = make_unique<SceneObject>(selectedPrimitive.modelPath);
-				obj->material = std::make_unique<ColorMaterial>(getColorShader(), vec3(0.0f, 0.0f, 1.0f));
-				obj->name = selectedPrimitive.displayName + " " + std::to_string(sceneObjects.size() + 1);
-				sceneObjects.push_back(std::move(obj));
-				selectedIndex = sceneObjects.size() - 1;
-				ImGui::CloseCurrentPopup();
-			}
-			
-			ImGui::EndPopup();
-		}
+		UI::DrawPrimitiveAddButton(sceneObjects, selectedIndex);
+		UI::DrawAddLightsButton(sceneObjects, pointLights, spotlights, selectedIndex, MAX_POINT_LIGHTS, MAX_SPOTLIGHTS);
+		
 
 		if (ImGui::Button("Add Backpack")) {
 			unique_ptr<SceneObject> bag = make_unique<SceneObject>("models/backpack/backpack.obj");
@@ -279,35 +212,9 @@ int main(void) {
 			selectedIndex = sceneObjects.size() - 1;
 		}
 
-		bool reachedMaxPointLights = pointLights.size() == MAX_POINT_LIGHTS;
-		if (reachedMaxPointLights) ImGui::BeginDisabled();
+		
 
-		if (ImGui::Button("Add Point Light")) {
-			unique_ptr<PointLight> light = make_unique<PointLight>(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-			light->name = "Point Light " + std::to_string(pointLights.size() + 1);
-
-			pointLights.push_back(light.get());
-			sceneObjects.push_back(std::move(light));
-			selectedIndex = sceneObjects.size() - 1;
-		}
-		if (reachedMaxPointLights) ImGui::EndDisabled();
-
-		bool reachedMaxSpotlights = spotlights.size() == MAX_SPOTLIGHTS;
-		if (reachedMaxSpotlights) ImGui::BeginDisabled();
-
-		if (ImGui::Button("Add Spotlight")) {
-			unique_ptr<Spotlight> light = make_unique<Spotlight>(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-			light->name = "Spotlight " + std::to_string(spotlights.size() + 1);
-			
-			spotlights.push_back(light.get());
-			sceneObjects.push_back(std::move(light));
-			selectedIndex = sceneObjects.size() - 1;
-		}
-		if (reachedMaxSpotlights) ImGui::EndDisabled();
-
-		// rebuild this every frame so that the UI is united
 		std::vector<const char*> labels;
-		// std::vector<Selectable*> selectables;
 
 		// group the objects by shader (rebuilding it every frame)
 		// simple solution for now, might make this better later
@@ -315,7 +222,6 @@ int main(void) {
 		// something something vector reallocation, dangling pointers, program crashes
 		shaderGroups.clear();
 		for (auto& obj: sceneObjects) {
-			// selectables.push_back(&obj);
 			labels.push_back(obj->name.c_str());
 			
 			unsigned int shaderID = obj->getShader().program;

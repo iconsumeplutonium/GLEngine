@@ -6,12 +6,28 @@
 #include <iostream>
 #include <memory>
 #include <cmath>
+#include <unordered_map>
 #include "Shader.h"
 #include "Material.h"
 #include "Model.h"
 #include "SceneObject.h"
 using namespace std;
 using namespace glm;
+
+struct Primitive {
+	string modelPath;
+	string displayName;
+};
+
+std::unordered_map<string, Primitive> primitives = {
+	{"sphere",    Primitive {.modelPath = "models/sphere.obj",    .displayName = "Sphere"   }},
+	{"cube",      Primitive {.modelPath = "models/cube.obj",      .displayName = "Cube"     }},
+	{"plane",     Primitive {.modelPath = "models/plane.obj",     .displayName = "Plane"    }},
+	{"icosphere", Primitive {.modelPath = "models/icosphere.obj", .displayName = "Icosphere"}},
+	{"cylinder",  Primitive {.modelPath = "models/cylinder.obj",  .displayName = "Cylinder" }},
+	{"cone",      Primitive {.modelPath = "models/cone.obj",      .displayName = "Cone"     }},
+	{"torus",     Primitive {.modelPath = "models/torus.obj",     .displayName = "Torus"    }},
+};
 
 namespace UI {
 	void DrawFPSPanel(ImGuiIO& io, float displayFPS, float deltaTime) {
@@ -23,53 +39,104 @@ namespace UI {
 		ImGui::End();
 	}
 
-	// void DrawObjectAdderPanel(bool& isSceneOpen, vector<SceneObject>& sceneObjects, vector<PointLight>& pointLights, int MAX_POINT_LIGHTS,) {
-	// 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-	// 	ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_Always);
-	// 	ImGui::Begin("Scene", &isSceneOpen);
-	// 	ImGui::Text("Objects");
-	// 	if (ImGui::Button("Add Sphere")) {
-	// 		SceneObject sphere("models/sphere.obj");
-	// 		sphere.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
-	// 		sphere.name = "Sphere " + std::to_string(sceneObjects.size() + 1);
+	void DrawPrimitiveAddButton(vector<unique_ptr<Selectable>>& sceneObjects, int& selectedIndex) {
+		if (ImGui::Button("Add Primitive")) {
+			ImGui::OpenPopup("primitive popup");
+		}
 
-	// 		sceneObjects.push_back(std::move(sphere));
-	// 	}
-	// 	if (ImGui::Button("Add Plane")) {
-	// 		SceneObject plane("models/plane.obj");
-	// 		plane.material = std::make_unique<ColorMaterial>(getColorShader(), glm::vec3(0.0f, 0.0f, 1.0f));
-	// 		plane.name = "Plane " + std::to_string(sceneObjects.size() + 1);
+		if (ImGui::BeginPopup("primitive popup")) {
+			bool wasSelected = false;
+			Primitive selectedPrimitive;
 
-	// 		sceneObjects.push_back(std::move(plane));
-	// 	}
-	// 	if (ImGui::Button("Add Backpack")) {
-	// 		SceneObject bag("models/backpack/backpack.obj");
-	// 		bag.material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
-	// 		bag.name = "Backpack " + std::to_string(sceneObjects.size() + 1);
-	// 		sceneObjects.push_back(std::move(bag));
-	// 	}
+			if (ImGui::Button("Sphere")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["sphere"];
+			}
+			if (ImGui::Button("Cube")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["cube"];
+			}
+			if (ImGui::Button("Plane")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["plane"];
+			}
+			if (ImGui::Button("Icosphere")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["icosphere"];
+			}
+			if (ImGui::Button("Cone")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["cone"];
+			}
+			if (ImGui::Button("Cylinder")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["cylinder"];
+			}
+			if (ImGui::Button("Torus")) {
+				wasSelected = true;
+				selectedPrimitive = primitives["torus"];
+			}
 
-	// 	bool reachedMaxPointLights = pointLights.size() == MAX_POINT_LIGHTS;
-	// 	if (reachedMaxPointLights) ImGui::BeginDisabled();
 
-	// 	if (ImGui::Button("Add Point Light")) {
-	// 		PointLight light(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-	// 		light.name = "Point Light " + std::to_string(pointLights.size() + 1);
-	// 		pointLights.push_back(std::move(light));
-	// 	}
-	// 	if (reachedMaxPointLights) ImGui::EndDisabled();
+			if (wasSelected) {
+				unique_ptr<SceneObject> obj = make_unique<SceneObject>(selectedPrimitive.modelPath);
+				obj->material = std::make_unique<ColorMaterial>(getColorShader(), vec3(0.0f, 0.0f, 1.0f));
+				obj->name = selectedPrimitive.displayName + " " + std::to_string(sceneObjects.size() + 1);
 
-	// 	bool reachedMaxSpotlights = spotlights.size() == MAX_SPOTLIGHTS;
-	// 	if (reachedMaxSpotlights) ImGui::BeginDisabled();
+				sceneObjects.push_back(std::move(obj));
+				selectedIndex = sceneObjects.size() - 1;
+				ImGui::CloseCurrentPopup();
+			}
+			
+			ImGui::EndPopup();
+		}
+	}
 
-	// 	if (ImGui::Button("Add Spotlight")) {
-	// 		Spotlight light(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
-	// 		light.name = "Spotlight " + std::to_string(spotlights.size() + 1);
-	// 		spotlights.push_back(std::move(light));
-	// 	}
-	// 	if (reachedMaxSpotlights) ImGui::EndDisabled();
-	// }
 
+	void DrawAddLightsButton(vector<unique_ptr<Selectable>>& sceneObjects, vector<PointLight*>& pointLights, vector<Spotlight*>& spotlights, int& selectedIndex, const int MAX_POINT_LIGHTS, const int MAX_SPOTLIGHTS) {
+		bool reachedMaxPointLights = pointLights.size() == MAX_POINT_LIGHTS;
+		bool reachedMaxSpotlights = spotlights.size() == MAX_SPOTLIGHTS;
+		
+		if (ImGui::Button("Add Light")) {
+			ImGui::OpenPopup("light popup");
+		}
+
+		if (ImGui::BeginPopup("light popup")) {
+			bool wasSelected = false;
+
+			if (reachedMaxPointLights) ImGui::BeginDisabled();
+			if (ImGui::Button("Point Light")) {
+				wasSelected = true;
+				unique_ptr<PointLight> light = make_unique<PointLight>(glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+				light->name = "Point Light " + std::to_string(pointLights.size() + 1);
+
+				pointLights.push_back(light.get());
+				sceneObjects.push_back(std::move(light));
+			}
+			if (reachedMaxPointLights) ImGui::EndDisabled();
+			
+
+
+			if (reachedMaxSpotlights) ImGui::BeginDisabled();
+			if (ImGui::Button("Spotlight")) {
+				wasSelected = true;
+				unique_ptr<Spotlight> light = make_unique<Spotlight>(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+				light->name = "Spotlight " + std::to_string(spotlights.size() + 1);
+				
+				spotlights.push_back(light.get());
+				sceneObjects.push_back(std::move(light));
+			}
+			if (reachedMaxSpotlights) ImGui::EndDisabled();			
+
+
+			if (wasSelected) {
+				selectedIndex = sceneObjects.size() - 1;
+				ImGui::CloseCurrentPopup();
+			}
+			
+			ImGui::EndPopup();
+		}
+	}
 };
 
 #endif
