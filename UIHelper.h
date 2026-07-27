@@ -180,9 +180,8 @@ namespace UI {
 
 	void DrawDeleteItemContextMenu(int& markedForDeletion, int& selectedIndex, vector<const char*>& labels) {
 		ImGui::SeparatorText("Scene");
-		// ImGui::ListBox("##SceneListBox", &selectedIndex, labels.data(), labels.size(), std::min((int) labels.size(), 20));
 
-		if (ImGui::BeginListBox("##SceneListBox")) {
+		if (ImGui::BeginListBox("##SceneListBox", ImVec2(-FLT_MIN, -FLT_MIN))) {
 			for (int i = 0; i < labels.size(); i++) {
 				bool isSelected = (selectedIndex == i);
 
