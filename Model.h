@@ -22,7 +22,9 @@ private:
 
 public:
 	Model(string path): path(path) {
-		directory = path.substr(0, path.find_last_of('/'));
+		// cout << "path is " << path << endl; 
+		directory = path.substr(0, path.find_last_of("/\\"));
+		// cout << "directory is " << directory << endl; 
 
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);

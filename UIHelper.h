@@ -11,6 +11,8 @@
 #include "Material.h"
 #include "Model.h"
 #include "SceneObject.h"
+#include <imgui/ImGuiFileDialog.h>
+
 using namespace std;
 using namespace glm;
 
@@ -132,11 +134,13 @@ namespace UI {
 			}
 			if (reachedMaxSpotlights) ImGui::EndDisabled();			
 
+
+
 			if (reachedMaxDirLights) ImGui::BeginDisabled();
 			if (ImGui::Button("Directional Light")) {
 				wasSelected = true;
 				shared_ptr<DirectionalLight> light = make_shared<DirectionalLight>(glm::vec3(0.0f, -1.0f, 0.0f));
-				light->name = "Directional LIght " + std::to_string(dirLights.size() + 1);
+				light->name = "Directional Light " + std::to_string(dirLights.size() + 1);
 				
 				dirLights.push_back(weak_ptr<DirectionalLight>(light));
 				sceneObjects.push_back(std::move(light));
@@ -199,6 +203,34 @@ namespace UI {
 			ImGui::EndListBox();
 		}
 		ImGui::End();
+	}
+
+	void DrawAddModelButton(vector<shared_ptr<Selectable>>& sceneObjects, int& selectedIndex) {
+		if (ImGui::Button("Add Model")) {
+			IGFD::FileDialogConfig config {
+				.path = "."
+			};
+			ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".*", config);
+		}
+
+		if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) { 
+			ImGuiIO& io = ImGui::GetIO();
+			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x / 2, 500.0f), ImGuiCond_Always);
+			if (ImGuiFileDialog::Instance()->IsOk()) {
+				std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+				// std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+				std::string name = ImGuiFileDialog::Instance()->GetCurrentFileName();
+				
+				shared_ptr<SceneObject> model = make_unique<SceneObject>(filePathName);
+				model->material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
+				model->name = name;
+				sceneObjects.push_back(std::move(model));
+				selectedIndex = sceneObjects.size() - 1;
+			}
+			
+			ImGuiFileDialog::Instance()->Close();
+		}
 	}
 };
 

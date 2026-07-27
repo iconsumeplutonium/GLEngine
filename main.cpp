@@ -40,21 +40,6 @@ const int MAX_DIR_LIGHTS = 10;
 // FirstPersonControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 OrbitControls camera(fov, 2.5f, 50.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-// struct Primitive {
-// 	string modelPath;
-// 	string displayName;
-// };
-
-// std::unordered_map<string, Primitive> primitives = {
-// 	{"sphere",    Primitive {.modelPath = "models/sphere.obj",    .displayName = "Sphere"   }},
-// 	{"cube",      Primitive {.modelPath = "models/cube.obj",      .displayName = "Cube"     }},
-// 	{"plane",     Primitive {.modelPath = "models/plane.obj",     .displayName = "Plane"    }},
-// 	{"icosphere", Primitive {.modelPath = "models/icosphere.obj", .displayName = "Icosphere"}},
-// 	{"cylinder",  Primitive {.modelPath = "models/cylinder.obj",  .displayName = "Cylinder" }},
-// 	{"cone",      Primitive {.modelPath = "models/cone.obj",      .displayName = "Cone"     }},
-// 	{"torus",     Primitive {.modelPath = "models/torus.obj",     .displayName = "Torus"    }},
-// };
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 	camera.aspectRatio = ((float) width) / height;
@@ -231,15 +216,16 @@ int main(void) {
 		UI::DrawRenderModeSwitch();
 		UI::DrawPrimitiveAddButton(sceneObjects, selectedIndex);
 		UI::DrawAddLightsButton(sceneObjects, pointLights, spotlights, dirLights, selectedIndex, MAX_POINT_LIGHTS, MAX_SPOTLIGHTS, MAX_DIR_LIGHTS);
-		
+		UI::DrawAddModelButton(sceneObjects, selectedIndex);	
 
-		if (ImGui::Button("Add Backpack")) {
-			shared_ptr<SceneObject> bag = make_unique<SceneObject>("models/backpack/backpack.obj");
-			bag->material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
-			bag->name = "Backpack " + std::to_string(sceneObjects.size() + 1);
-			sceneObjects.push_back(std::move(bag));
-			selectedIndex = sceneObjects.size() - 1;
-		}
+
+		// if (ImGui::Button("Add Backpack")) {
+		// 	shared_ptr<SceneObject> bag = make_unique<SceneObject>("models/backpack/backpack.obj");
+		// 	bag->material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
+		// 	bag->name = "Backpack " + std::to_string(sceneObjects.size() + 1);
+		// 	sceneObjects.push_back(std::move(bag));
+		// 	selectedIndex = sceneObjects.size() - 1;
+		// }
 
 		
 
@@ -305,6 +291,7 @@ int main(void) {
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyPlatformWindows();
 	ImGui::DestroyContext();
+
 
 	glfwTerminate();
 	return 0;
