@@ -11,3 +11,10 @@ This is a simple engine written in OpenGL and ImGUI.
 
 <img width="80%" height="auto" alt="image" src="https://github.com/user-attachments/assets/8a14a313-8d52-46de-86a6-212e9937e485" />
 
+### Attributions
+
+* [Low-poly airplane model](https://skfb.ly/6U86y) from the above screenshot
+* [learnopengl.com](https://learnopengl.com/) by Joey de Vries
+* [ImGUI](https://github.com/ocornut/imgui)
+* [ImGUIFileDialog](https://github.com/aiekick/ImGuiFileDialog)
+* [Assimp](https://github.com/assimp/assimp)
