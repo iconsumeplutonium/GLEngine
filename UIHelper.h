@@ -212,10 +212,9 @@ namespace UI {
 			ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".*", config);
 		}
 
-		if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) { 
-			ImGuiIO& io = ImGui::GetIO();
-			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-			ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x / 2, 500.0f), ImGuiCond_Always);
+		ImGuiIO& io = ImGui::GetIO();
+		ImVec2 size = ImVec2(io.DisplaySize.x * 0.75f, io.DisplaySize.y * 0.75f);
+		if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey", ImGuiWindowFlags_NoCollapse, size)) { 
 			if (ImGuiFileDialog::Instance()->IsOk()) {
 				std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 				// std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
