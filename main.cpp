@@ -211,23 +211,12 @@ int main(void) {
 
 		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
 		ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_Always);
-		ImGui::Begin("Heirarchy");
+		ImGui::Begin("Hierarchy");
 
 		UI::DrawRenderModeSwitch();
 		UI::DrawPrimitiveAddButton(sceneObjects, selectedIndex);
 		UI::DrawAddLightsButton(sceneObjects, pointLights, spotlights, dirLights, selectedIndex, MAX_POINT_LIGHTS, MAX_SPOTLIGHTS, MAX_DIR_LIGHTS);
 		UI::DrawAddModelButton(sceneObjects, selectedIndex);	
-
-
-		// if (ImGui::Button("Add Backpack")) {
-		// 	shared_ptr<SceneObject> bag = make_unique<SceneObject>("models/backpack/backpack.obj");
-		// 	bag->material = std::make_unique<DiffuseMaterial>(getDiffuseShader());
-		// 	bag->name = "Backpack " + std::to_string(sceneObjects.size() + 1);
-		// 	sceneObjects.push_back(std::move(bag));
-		// 	selectedIndex = sceneObjects.size() - 1;
-		// }
-
-		
 
 		std::vector<const char*> labels;
 

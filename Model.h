@@ -9,25 +9,24 @@
 #include "include/stb_image/stb_image.h"
 #include "Shader.h"
 #include "Mesh.h"
+#include <unordered_map>
 using namespace std;
 
 #define here cout << "here" << endl;
 
 class Model {
 private:
-	vector<Texture_> texturesLoaded;
+	unordered_map<std::string, Texture_> texturesLoaded;
 	vector<Mesh> meshes;
 	string path;
 	string directory;
 
 public:
 	Model(string path): path(path) {
-		// cout << "path is " << path << endl; 
 		directory = path.substr(0, path.find_last_of("/\\"));
-		// cout << "directory is " << directory << endl; 
 
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_PreTransformVertices);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			cout << "Something went wrong trying to load " << path << endl;
@@ -35,13 +34,10 @@ public:
 			exit(-1);
 		}
 		
-		cout << "in model constructor" << endl;
 		processNode(scene->mRootNode, scene);
-		cout << "done consturcting model" << endl;
 	}
 
 	void processNode(aiNode* node, const aiScene* scene) {
-		cout << "processing node" << endl;
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 			meshes.push_back(processMesh(mesh, scene));
@@ -49,13 +45,10 @@ public:
 
 		for (int i = 0; i < node->mNumChildren; i++) {
 			processNode(node->mChildren[i], scene);
-		}	
-
-		cout << "processed node" << endl;
+		}
 	}
 
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene) {
-		cout << "processing mesh" << endl;
 		vector<Vertex> vertices;
 		vector<unsigned int> indices;
 		vector<Texture_> textures;
@@ -71,11 +64,7 @@ public:
 			}
 
 			if (mesh->mTextureCoords[0]) {
-				// v.uv = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-				glm::vec2 vector;
-				vector.x = mesh->mTextureCoords[0][i].x;
-				vector.y = mesh->mTextureCoords[0][i].y;
-				v.uv = vector;
+				v.uv = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 			}
 			else
 				v.uv = glm::vec2(0.0f);
@@ -104,30 +93,24 @@ public:
 		return m;
 	};
 
-	vector<Texture_> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName) {
+	vector<Texture_> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName) {
 		vector<Texture_> textures;
 		for(unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
 			aiString str;
 			mat->GetTexture(type, i, &str);
-			bool skip = false;
-			for (unsigned int j = 0; j < texturesLoaded.size(); j++) {
-				if(std::strcmp(texturesLoaded[j].path.data(), str.C_Str()) == 0) {
-					textures.push_back(texturesLoaded[j]);
-					skip = true; 
-					// std::cout << "  texture: " << str.C_Str() << " as " << typeName << (skip ? " [CACHED]" : " [NEW]") << std::endl;
-					break;
-				}
-			}
-			if (!skip) {
-				Texture_ texture;
-				texture.id = TextureFromFile(str.C_Str(), directory);
-				texture.type = typeName;
-				texture.path = str.C_Str();
-				textures.push_back(texture);
-				texturesLoaded.push_back(texture); // add to loaded textures
+			string matName = string(str.C_Str());
 
-				// std::cout << "  texture: " << str.C_Str() << " as " << typeName << (skip ? " [CACHED]" : " [NEW]") << std::endl;
+			if (texturesLoaded.contains(matName)) {
+				textures.push_back(texturesLoaded[matName]);
+				continue;
 			}
+
+			Texture_ texture;
+			texture.id = TextureFromFile(str.C_Str(), directory);
+			texture.type = typeName;
+			texture.path = str.C_Str();
+			textures.push_back(texture);
+			texturesLoaded[texture.path] = texture; // add to loaded textures
 		}
 
 		return textures;
@@ -156,7 +139,7 @@ public:
 		}
 
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
