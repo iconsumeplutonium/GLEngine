@@ -125,6 +125,9 @@ class SceneObject: public Selectable {
 					case MaterialType::Lit:
 						material = std::make_unique<LitMaterial>(getLitShader());
 						break;
+					case MaterialType::BasicPBR:
+						material = std::make_unique<BasicPBRMaterial>(getBasicPBRShader());
+						break;
 				}
 			}
 			
