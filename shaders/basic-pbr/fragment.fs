@@ -134,8 +134,7 @@ vec3 calculateSpotlight(Spotlight light, vec3 baseDiffuseColor, vec3 baseSpecula
 }
 
 vec3 schlickFresnel(float hDotv, vec3 F0) {
-	// float realHdotV = clamp(1.0 - hDotv, 0.0, 1.0);
-	return F0 + (1.0 - F0) * (1.0 - pow(hDotv, 5.0));
+	return F0 + (1.0 - F0) * (pow(1.0 - hDotv, 5.0));
 }
 
 float trGGX(vec3 N, vec3 H, float roughness) {
