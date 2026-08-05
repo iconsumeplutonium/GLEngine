@@ -73,64 +73,36 @@ in vec2 vUv;
 
 out vec4 FragColor;
 
-vec3 calculateDirLight(DirectionalLight light, vec3 baseDiffuseColor, vec3 baseSpecularColor, vec3 dirToCamera) {
-	vec3 dirToLight = normalize(-light.direction);
-
-	vec3 ambient = light.ambient * baseDiffuseColor;
-
-	float nDotL = max(dot(vNormal, dirToLight), 0.0);
-	vec3 diffuse = light.diffuse * nDotL * baseDiffuseColor;
-
-	vec3 halfway = normalize(dirToCamera + dirToLight);
-	float spec = max(dot(halfway, vNormal), 0.0);
-	vec3 specular = pow(spec, specularExp) * baseSpecularColor * light.specular;
-
-	return diffuse + ambient + specular;
+// why is this not fucking built in
+float clampdot(vec3 a, vec3 b) {
+	return max(dot(a, b), 0.0);
 }
 
-vec3 calculatePointLight(PointLight light, vec3 baseDiffuseColor, vec3 baseSpecularColor, vec3 dirToCamera) {
-	vec3 ambient = 0.1 * baseDiffuseColor * light.ambient.xyz;
+vec3 calculateDirLight(DirectionalLight light) {
+	return light.diffuse.xyz; //no attenuation for dir lights
+}
 
+vec3 calculatePointLight(PointLight light) {
+	float d = length(light.position.xyz - fragPos);
+	float attenuation = 1.0 / (light.constant + light.linear*d + light.quadratic*d*d);
+
+	vec3 radiance = light.diffuse.xyz * attenuation;
+
+	return radiance;
+}
+
+vec3 calculateSpotlight(Spotlight light) {
 	vec3 dirToLight = normalize(light.position.xyz - fragPos);
 
 	float d = length(light.position.xyz - fragPos);
 	float attenuation = 1.0 / (light.constant + light.linear*d + light.quadratic*d*d);
-
-
-	float nDotL = max(dot(dirToLight, vNormal), 0.0);
-	vec3 diffuse = nDotL * baseDiffuseColor * light.diffuse.xyz;
-
-	vec3 halfway = normalize(dirToLight + dirToCamera);
-	float specularStrength = max(dot(halfway, vNormal), 0.0f);
-	float spec = pow(specularStrength, specularExp);
-	vec3 specular = spec * baseSpecularColor * light.specular.xyz;
-
-	return (diffuse + ambient + specular) * attenuation;
-}
-
-vec3 calculateSpotlight(Spotlight light, vec3 baseDiffuseColor, vec3 baseSpecularColor, vec3 dirToCamera) {
-	vec3 dirToLight = normalize(light.position.xyz - fragPos);
-
-	float d = length(light.position.xyz - fragPos);
-	float attenuation = 1.0 / (light.constant + light.linear*d + light.quadratic*d*d);
-
-
-	float nDotL = max(dot(dirToLight, vNormal), 0.0);
-	vec3 diffuse = nDotL * baseDiffuseColor * light.diffuse.xyz;
-
-	vec3 halfway = normalize(dirToLight + dirToCamera);
-	float specularStrength = max(dot(halfway, vNormal), 0.0f);
-	float spec = pow(specularStrength, specularExp);
-	vec3 specular = spec * baseSpecularColor * light.specular.xyz;
-
 
     float theta = dot(-dirToLight, normalize(light.direction.xyz)); 
     float epsilon = light.innerCutoff - light.outerCutoff;
     float falloffCone = clamp((theta - light.outerCutoff) / epsilon, 0.0, 1.0);
 
-    vec3 ambient = 0.1 * baseDiffuseColor * light.ambient.xyz;
 
-	return (diffuse*falloffCone + ambient + specular*falloffCone) * attenuation;
+	return light.diffuse.xyz * falloffCone * attenuation;
 }
 
 vec3 schlickFresnel(float hDotv, vec3 F0) {
@@ -161,6 +133,30 @@ float smithGeometry(vec3 N, vec3 V, vec3 dirToLight, float roughness) {
 	return schlickGGX(NdotV, roughness) * schlickGGX(NdotL, roughness);
 }
 
+vec3 getLoForLight(vec3 H, vec3 radiance, vec3 dirToCamera, vec3 dirToLight, vec3 F0) {
+	// normal function (trowbridge-reitz ggx)
+	float N = trGGX(vNormal, H, roughness);
+
+	// geometry (schlick ggx or something)
+	float G = smithGeometry(vNormal, dirToCamera, dirToLight, roughness);
+
+	// fresnel
+	vec3 F = schlickFresnel(clampdot(H, dirToCamera), F0);
+
+	// cook torrence (i think)
+	vec3 numerator = N * G * F;
+	float denominator = 4.0 * clampdot(vNormal, dirToCamera) * clampdot(vNormal, dirToLight) + 0.001;
+	vec3 specular = numerator / denominator;
+
+	vec3 kS = F;
+	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallicness);
+
+	float NdotL = clampdot(vNormal, dirToLight);
+	vec3 Lo = ((kD * albedo / 3.14159) + specular) * radiance * NdotL; // Lo
+
+	return Lo;
+}
+
 void main() {
 	vec3 dirToCamera = normalize(camPos - fragPos); // V
 
@@ -174,32 +170,28 @@ void main() {
 			vec3 dirToLight = normalize(pointLights[i].position.xyz - fragPos); // L
 			vec3 H = normalize(dirToLight + dirToCamera);
 
-			float distToLight = length(pointLights[i].position.xyz - fragPos);
-			float attentuation = 1.0 / (distToLight * distToLight);
-			vec3 radiance = pointLights[i].diffuse.xyz; //* attentuation;
+			vec3 radiance = calculatePointLight(pointLights[i]);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0);
+		}
+	}
 
-			// normal function (trowbridge-reitz ggx)
-			float N = trGGX(vNormal, H, roughness);
+	if (numSpotlights > 0) {
+		for (int i = 0; i < numSpotlights; i++) {
+			vec3 dirToLight = normalize(spotlights[i].position.xyz - fragPos); // L
+			vec3 H = normalize(dirToLight + dirToCamera);
 
-			// geometry (schlick ggx or something)
-			float G = smithGeometry(vNormal, dirToCamera, dirToLight, roughness);
+			vec3 radiance = calculateSpotlight(spotlights[i]);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0);
+		}
+	}
 
-			// fresnel
-			vec3 F = schlickFresnel(max(dot(H, dirToCamera), 0.0), F0);
+	if (numDirLights > 0) {
+		for (int i = 0; i < numDirLights; i++) {
+			vec3 dirToLight = normalize(-dirLights[i].direction); // L
+			vec3 H = normalize(dirToLight + dirToCamera);
 
-			// cook torrence (i think)
-			vec3 numerator = N * G * F;
-			float denominator = 4.0 * max(dot(vNormal, dirToCamera), 0.0) * max(dot(vNormal, dirToLight), 0.0) + 0.001;
-			vec3 specular = numerator / denominator;
-
-			vec3 kS = F;
-			vec3 kD = (vec3(1.0) - kS) * (1.0 - metallicness);
-
-			float NdotL = max(dot(vNormal, dirToLight), 0.0);
-			color += ((kD * albedo / 3.14159) + specular) * radiance * NdotL; // Lo
-
-
-			// color += calculatePointLight(pointLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
+			vec3 radiance = calculateDirLight(dirLights[i]);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0);
 		}
 	}
 
@@ -208,28 +200,7 @@ void main() {
 
 	color /= color + vec3(1.0);
 	color = pow(color, vec3(1.0/2.2));
-	
-	// vec3 baseDiffuseColor = hasDiffuseMap ? texture(diffuseMap, vUv).xyz : diffuseColor;
-	// vec3 baseSpecularColor = hasSpecularMap ? texture(specularMap, vUv).xyz : specularColor;
 
-
-	// if (numPointLights > 0) {
-	// 	for (int i = 0; i < numPointLights; i++) {
-	// 		color += calculatePointLight(pointLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
-	// 	}
-	// }
-
-	// if (numSpotlights > 0) {
-	// 	for (int i = 0; i < numSpotlights; i++) {
-	// 		color += calculateSpotlight(spotlights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
-	// 	}
-	// }
-
-	// if (numDirLights > 0) {
-	// 	for (int i = 0; i < numDirLights; i++) {
-	// 		color += calculateDirLight(dirLights[i], baseDiffuseColor, baseSpecularColor, dirToCamera);
-	// 	}
-	// }
 	
 	FragColor = vec4(color, 1.0);
 }
