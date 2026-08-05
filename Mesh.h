@@ -15,6 +15,7 @@ struct Vertex {
 	glm::vec3 position;
 	glm::vec3 normal;
 	glm::vec2 uv;
+	glm::vec3 tangent;
 };
 
 struct Texture_ {
@@ -48,9 +49,11 @@ public:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent));
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
 
 		glBindVertexArray(0);
 	};
@@ -60,9 +63,11 @@ public:
 		// the texture will be used
 		shader.setBool("hasDiffuseMap", false);
 		shader.setBool("hasSpecularMap", false);
+		shader.setBool("hasNormalMap", false);
 
 		unsigned int diffuseNum = 1;
 		unsigned int specularNum = 1;
+		unsigned int normalNum = 1;
 		for (int i = 0; i < textures.size(); i++) {
 			glActiveTexture(GL_TEXTURE0 + i);
 			string number;
@@ -74,9 +79,12 @@ public:
 			else if (name == "texture_specular"){ 
 				number = std::to_string(specularNum++);
 				shader.setBool("hasSpecularMap", true);
+			} else if (name == "normalMap") {
+				number = std::to_string(normalNum++);
+				shader.setBool("hasNormalMap", true);
 			}
 
-			shader.setInt(name + number, i);
+			shader.setInt(name, i);
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
 		}
 

@@ -36,7 +36,7 @@ Shader& getDiffuseShader() {
 }
 
 Shader& getLitShader() {
-	static Shader litShader("shaders/light/vertex.vs", "shaders/light/fragment.fs"); // lighting
+	static Shader litShader("shaders/pbr/vertex.vs", "shaders/light/fragment.fs"); // lighting
 	return litShader;
 }
 
