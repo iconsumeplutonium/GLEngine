@@ -20,7 +20,7 @@ struct Vertex {
 
 struct Texture_ {
 	unsigned int id;
-	string type;
+	aiTextureType type;
 	string path;
 };
 
@@ -65,26 +65,21 @@ public:
 		shader.setBool("hasSpecularMap", false);
 		shader.setBool("hasNormalMap", false);
 
-		unsigned int diffuseNum = 1;
-		unsigned int specularNum = 1;
-		unsigned int normalNum = 1;
 		for (int i = 0; i < textures.size(); i++) {
 			glActiveTexture(GL_TEXTURE0 + i);
-			string number;
-			string name = textures[i].type;
-			if (name == "texture_diffuse") {
-				number = std::to_string(diffuseNum++);
-				shader.setBool("hasDiffuseMap", true);
-			}
-			else if (name == "texture_specular"){ 
-				number = std::to_string(specularNum++);
-				shader.setBool("hasSpecularMap", true);
-			} else if (name == "normalMap") {
-				number = std::to_string(normalNum++);
-				shader.setBool("hasNormalMap", true);
+
+			switch (textures[i].type) {
+				case aiTextureType_DIFFUSE:
+					shader.setBool("hasDiffuseMap", true);
+					break;
+				case aiTextureType_SPECULAR:
+					shader.setBool("hasSpecularMap", true);
+					break;
+				case aiTextureType_NORMALS:
+					shader.setBool("hasNormalMap", true);
+					break;		
 			}
 
-			shader.setInt(name, i);
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);
 		}
 

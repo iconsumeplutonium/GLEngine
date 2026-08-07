@@ -83,15 +83,15 @@ public:
 
 		if (mesh->mMaterialIndex >= 0) {
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			cout << "for this mesh-----------" << endl;
+			// cout << "for this mesh-----------" << endl;
 			// int metalRougness = material->GetTextureCount(aiTextureType_GLTF_METALLIC_ROUGHNESS);
 			// cout << "there are " << metalRougness << "metallic/roughness textures" << endl;
 
 			// int ao = material->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION);
 			// cout << "there are " << ao << "ao textures" << endl;
 
-			int n = material->GetTextureCount(aiTextureType_NORMALS);
-			cout << "there are " << n << "normal textures" << endl;
+			// int n = material->GetTextureCount(aiTextureType_NORMALS);
+			// cout << "there are " << n << "normal textures" << endl;
 
 			// int d = material->GetTextureCount(aiTextureType_DIFFUSE);
 			// cout << "there are " << d << "diffuse textures" << endl;
@@ -102,15 +102,15 @@ public:
 			// float t = 0.0f;
 			// material->Get(AI_MATKEY_METALLIC_FACTOR, t);
 			// cout << "metallic factor scalar" << t << endl;
-			cout << "-----" << endl;
+			// cout << "-----" << endl;
 
-			vector<Texture_> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+			vector<Texture_> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
 			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 			
-			vector<Texture_> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+			vector<Texture_> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR);
 			textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-			vector<Texture_> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "normalMap");
+			vector<Texture_> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS);
 			textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 		}
 
@@ -118,7 +118,7 @@ public:
 		return m;
 	};
 
-	vector<Texture_> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName) {
+	vector<Texture_> loadMaterialTextures(aiMaterial* mat, aiTextureType type) {
 		vector<Texture_> textures;
 		for(unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
 			aiString str;
@@ -132,7 +132,7 @@ public:
 
 			Texture_ texture;
 			texture.id = TextureFromFile(str.C_Str(), directory);
-			texture.type = typeName;
+			texture.type = type;
 			texture.path = str.C_Str();
 			textures.push_back(texture);
 			texturesLoaded[texture.path] = texture; // add to loaded textures
