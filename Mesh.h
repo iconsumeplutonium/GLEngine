@@ -16,6 +16,7 @@ struct Vertex {
 	glm::vec3 normal;
 	glm::vec2 uv;
 	glm::vec3 tangent;
+	glm::vec3 bitangent;
 };
 
 struct Texture_ {
@@ -50,10 +51,12 @@ public:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
 		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent));
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent));
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
 		glEnableVertexAttribArray(3);
+		glEnableVertexAttribArray(4);
 
 		glBindVertexArray(0);
 	};
@@ -62,8 +65,10 @@ public:
 		// assume it to have no textures at all. if it does, in the loop, these will become true and
 		// the texture will be used
 		shader.setBool("hasDiffuseMap", false);
+		shader.setBool("hasAlbedoMap", false);
 		shader.setBool("hasSpecularMap", false);
 		shader.setBool("hasNormalMap", false);
+		shader.setBool("hasMetalRoughMap", false);
 
 		for (int i = 0; i < textures.size(); i++) {
 			glActiveTexture(GL_TEXTURE0 + i);
@@ -71,13 +76,17 @@ public:
 			switch (textures[i].type) {
 				case aiTextureType_DIFFUSE:
 					shader.setBool("hasDiffuseMap", true);
+					shader.setBool("hasAlbedoMap", true);
 					break;
 				case aiTextureType_SPECULAR:
 					shader.setBool("hasSpecularMap", true);
 					break;
 				case aiTextureType_NORMALS:
 					shader.setBool("hasNormalMap", true);
-					break;		
+					break;
+				case aiTextureType_GLTF_METALLIC_ROUGHNESS:
+					shader.setBool("hasMetalRoughMap", true);
+					break;
 			}
 
 			glBindTexture(GL_TEXTURE_2D, textures[i].id);

@@ -17,10 +17,11 @@ enum MaterialType {
 	Color = 0,
 	Diffuse,
 	Lit,
-	BasicPBR
+	BasicPBR,
+	PBR
 };
 
-const char* materialTypes[] = {"Color Material", "Diffuse Material", "Lit Material", "Basic PBR Material"};
+const char* materialTypes[] = {"Color Material", "Diffuse Material", "Lit Material", "Basic PBR Material", "PBR Material"};
 
 // "lazily initialized accessor function"
 // Shader's constructor will only get called once (first time tfunction is called)
@@ -43,6 +44,11 @@ Shader& getLitShader() {
 Shader& getBasicPBRShader() {
 	static Shader basicPBRShader("shaders/basic-pbr/vertex.vs", "shaders/basic-pbr/fragment.fs"); // lighting pbr
 	return basicPBRShader;
+}
+
+Shader& getPBRShader() {
+	static Shader pbrShader("shaders/pbr/vertex.vs", "shaders/pbr/fragment.fs"); // lighting pbr
+	return pbrShader;
 }
 
 class Material {
@@ -159,6 +165,36 @@ public:
 
 	MaterialType getMaterialType() {
 		return MaterialType::BasicPBR;
+	}
+};
+
+class PBRMaterial: public Material {
+public:
+	vec3 albedo = vec3(0.0f);
+	float metallicness = 0.0f;
+	float roughness = 0.0f;
+	float ao = 0.0f;
+
+	PBRMaterial(Shader& shader): Material(shader) {};
+
+	void apply() {
+		shader.setVec3("albedoColor", albedo);
+		shader.setFloat("metallicFactor", metallicness);
+		shader.setFloat("roughnessFactor", roughness);
+		shader.setFloat("aoFactor", ao);
+	}
+
+	void materialSettingsPanel() {
+		ImGui::Begin("PBR Material Settings");
+		ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo), ImGuiColorEditFlags_NoInputs);
+		ImGui::DragFloat("Metallicness", &metallicness, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiColorEditFlags_NoInputs);
+		ImGui::DragFloat("Roughness", &roughness, 0.01f, 0.0f, 1.0f, "%.2f", ImGuiColorEditFlags_NoInputs);
+		ImGui::DragFloat("AO", &ao, 0.01f, 0.0f, 10.0f, "%.2f", ImGuiColorEditFlags_NoInputs);
+		ImGui::End();
+	}
+
+	MaterialType getMaterialType() {
+		return MaterialType::PBR;
 	}
 };
 

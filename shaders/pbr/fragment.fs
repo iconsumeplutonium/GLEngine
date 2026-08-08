@@ -5,13 +5,10 @@ uniform sampler2D albedoMap;
 uniform vec3 albedoColor;
 uniform bool hasAlbedoMap;
 
-uniform sampler2D metallicMap;
+uniform sampler2D metallicRoughnessMap;
 uniform float metallicFactor;
-uniform bool hasMetallicMap;
-
-uniform sampler2D roughnessMap;
 uniform float roughnessFactor;
-uniform bool hasRoughnessMap;
+uniform bool hasMetalRoughMap;
 
 uniform sampler2D aoMap;
 uniform float aoFactor;
@@ -136,7 +133,7 @@ float smithGeometry(vec3 N, vec3 V, vec3 dirToLight, float roughness) {
 	return schlickGGX(NdotV, roughness) * schlickGGX(NdotL, roughness);
 }
 
-vec3 getLoForLight(vec3 H, vec3 radiance, vec3 dirToCamera, vec3 dirToLight, vec3 F0) {
+vec3 getLoForLight(vec3 H, vec3 radiance, vec3 dirToCamera, vec3 dirToLight, vec3 F0, vec3 albedo, float roughness, float metallicness, float ao) {
 	// normal function (trowbridge-reitz ggx)
 	float N = trGGX(vNormal, H, roughness);
 
@@ -163,6 +160,11 @@ vec3 getLoForLight(vec3 H, vec3 radiance, vec3 dirToCamera, vec3 dirToLight, vec
 void main() {
 	vec3 dirToCamera = normalize(camPos - fragPos); // V
 
+	vec3 albedo = hasAlbedoMap ? texture(albedoMap, vUv).xyz : albedoColor;
+	float roughness = hasMetalRoughMap ? texture(metallicRoughnessMap, vUv).r : roughnessFactor;
+	float metallicness = hasMetalRoughMap ? texture(metallicRoughnessMap, vUv).g : metallicFactor;
+	float ao = hasAOMap ? texture(aoMap, vUv).r : aoFactor;
+
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, albedo, metallicness);
 
@@ -174,7 +176,7 @@ void main() {
 			vec3 H = normalize(dirToLight + dirToCamera);
 
 			vec3 radiance = calculatePointLight(pointLights[i]);
-			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao);
 		}
 	}
 
@@ -184,7 +186,7 @@ void main() {
 			vec3 H = normalize(dirToLight + dirToCamera);
 
 			vec3 radiance = calculateSpotlight(spotlights[i]);
-			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao);
 		}
 	}
 
@@ -194,7 +196,7 @@ void main() {
 			vec3 H = normalize(dirToLight + dirToCamera);
 
 			vec3 radiance = calculateDirLight(dirLights[i]);
-			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao);
 		}
 	}
 

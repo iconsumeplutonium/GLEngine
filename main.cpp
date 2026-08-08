@@ -103,6 +103,7 @@ int main(void) {
 	getDiffuseShader();
 	getLitShader();
 	getBasicPBRShader();
+	getPBRShader();
 	
 	float displayFPS = 0.0f;
 	bool isSceneOpen = true;

@@ -128,6 +128,9 @@ class SceneObject: public Selectable {
 					case MaterialType::BasicPBR:
 						material = std::make_unique<BasicPBRMaterial>(getBasicPBRShader());
 						break;
+					case MaterialType::PBR:
+						material = std::make_unique<PBRMaterial>(getPBRShader());
+						break;
 				}
 			}
 			
