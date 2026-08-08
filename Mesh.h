@@ -16,7 +16,7 @@ struct Vertex {
 	glm::vec3 normal;
 	glm::vec2 uv;
 	glm::vec3 tangent;
-	glm::vec3 bitangent;
+	// glm::vec3 bitangent;
 };
 
 struct Texture_ {
@@ -51,12 +51,12 @@ public:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
 		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent));
-		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent));
+		// glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent));
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
 		glEnableVertexAttribArray(3);
-		glEnableVertexAttribArray(4);
+		// glEnableVertexAttribArray(4);
 
 		glBindVertexArray(0);
 	};

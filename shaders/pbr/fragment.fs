@@ -14,13 +14,15 @@ uniform sampler2D aoMap;
 uniform float aoFactor;
 uniform bool hasAOMap;
 
+uniform bool hasNormalMap;
+
 
 struct DirectionalLight {
-	vec3 direction;
+	vec4 direction;
 
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
+	vec4 diffuse;
+	vec4 ambient;
+	vec4 specular;
 };
 
 struct PointLight {
@@ -66,10 +68,14 @@ layout (std140, binding = 0) uniform Lights {
 };
 
 uniform vec3 camPos;
+uniform sampler2D normalMap;
 
 in vec3 vNormal;
 in vec3 fragPos;
 in vec2 vUv;
+// in vec3 vTangent;
+// in vec3 vBitangent;
+in mat3 TBN;
 
 out vec4 FragColor;
 
@@ -133,25 +139,25 @@ float smithGeometry(vec3 N, vec3 V, vec3 dirToLight, float roughness) {
 	return schlickGGX(NdotV, roughness) * schlickGGX(NdotL, roughness);
 }
 
-vec3 getLoForLight(vec3 H, vec3 radiance, vec3 dirToCamera, vec3 dirToLight, vec3 F0, vec3 albedo, float roughness, float metallicness, float ao) {
+vec3 getLoForLight(vec3 H, vec3 radiance, vec3 dirToCamera, vec3 dirToLight, vec3 F0, vec3 albedo, float roughness, float metallicness, float ao, vec3 normal) {
 	// normal function (trowbridge-reitz ggx)
-	float N = trGGX(vNormal, H, roughness);
+	float N = trGGX(normal, H, roughness);
 
 	// geometry (schlick ggx or something)
-	float G = smithGeometry(vNormal, dirToCamera, dirToLight, roughness);
+	float G = smithGeometry(normal, dirToCamera, dirToLight, roughness);
 
 	// fresnel
 	vec3 F = schlickFresnel(clampdot(H, dirToCamera), F0);
 
 	// cook torrence (i think)
 	vec3 numerator = N * G * F;
-	float denominator = 4.0 * clampdot(vNormal, dirToCamera) * clampdot(vNormal, dirToLight) + 0.001;
+	float denominator = 4.0 * clampdot(normal, dirToCamera) * clampdot(normal, dirToLight) + 0.001;
 	vec3 specular = numerator / denominator;
 
 	vec3 kS = F;
 	vec3 kD = (vec3(1.0) - kS) * (1.0 - metallicness);
 
-	float NdotL = clampdot(vNormal, dirToLight);
+	float NdotL = clampdot(normal, dirToLight);
 	vec3 Lo = ((kD * albedo / 3.14159) + specular) * radiance * NdotL; // Lo
 
 	return Lo;
@@ -160,9 +166,15 @@ vec3 getLoForLight(vec3 H, vec3 radiance, vec3 dirToCamera, vec3 dirToLight, vec
 void main() {
 	vec3 dirToCamera = normalize(camPos - fragPos); // V
 
+	vec3 normal = normalize(vNormal);
+	if (hasNormalMap) {
+		// mat3 TBN = mat3(normalize(vTangent), normalize(vBitangent), normalize(vNormal));
+		normal = normalize(TBN * (texture(normalMap, vUv).xyz * 2.0 - 1.0));
+	}
+
 	vec3 albedo = hasAlbedoMap ? texture(albedoMap, vUv).xyz : albedoColor;
-	float roughness = hasMetalRoughMap ? texture(metallicRoughnessMap, vUv).r : roughnessFactor;
-	float metallicness = hasMetalRoughMap ? texture(metallicRoughnessMap, vUv).g : metallicFactor;
+	float roughness = hasMetalRoughMap ? texture(metallicRoughnessMap, vUv).g : roughnessFactor;
+	float metallicness = hasMetalRoughMap ? texture(metallicRoughnessMap, vUv).b : metallicFactor;
 	float ao = hasAOMap ? texture(aoMap, vUv).r : aoFactor;
 
 	vec3 F0 = vec3(0.04);
@@ -176,7 +188,7 @@ void main() {
 			vec3 H = normalize(dirToLight + dirToCamera);
 
 			vec3 radiance = calculatePointLight(pointLights[i]);
-			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao, normal);
 		}
 	}
 
@@ -186,17 +198,17 @@ void main() {
 			vec3 H = normalize(dirToLight + dirToCamera);
 
 			vec3 radiance = calculateSpotlight(spotlights[i]);
-			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao, normal);
 		}
 	}
 
 	if (numDirLights > 0) {
 		for (int i = 0; i < numDirLights; i++) {
-			vec3 dirToLight = normalize(-dirLights[i].direction); // L
+			vec3 dirToLight = normalize(-dirLights[i].direction.xyz); // L
 			vec3 H = normalize(dirToLight + dirToCamera);
 
 			vec3 radiance = calculateDirLight(dirLights[i]);
-			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao);
+			color += getLoForLight(H, radiance, dirToCamera, dirToLight, F0, albedo, roughness, metallicness, ao, normal);
 		}
 	}
 
@@ -205,7 +217,6 @@ void main() {
 
 	color /= color + vec3(1.0);
 	color = pow(color, vec3(1.0/2.2));
-
 	
 	FragColor = vec4(color, 1.0);
 }

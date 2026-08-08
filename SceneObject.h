@@ -23,8 +23,8 @@ using namespace glm;
 struct alignas(16) PointLightGPUStruct {
 	vec4 position;
 
-	vec4 ambient;
 	vec4 diffuse;
+	vec4 ambient;
 	vec4 specular;
 
 	float constant;
@@ -52,8 +52,8 @@ struct alignas(16) SpotlightGPUStruct {
 struct alignas(16) DirLightGPUStruct {
 	vec4 direction;
 
-	vec4 ambient;
 	vec4 diffuse;
+	vec4 ambient;
 	vec4 specular;
 };
 

@@ -60,11 +60,11 @@ public:
 			if (mesh->mNormals != nullptr) {
 				v.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 				v.tangent = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
-				v.bitangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+				// v.bitangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
 			} else {
 				v.normal = glm::vec3(0.0f);
 				v.tangent = glm::vec3(0.0f);
-				v.bitangent = glm::vec3(0.0f);
+				// v.bitangent = glm::vec3(0.0f);
 			}
 
 			if (mesh->mTextureCoords[0]) {
@@ -85,26 +85,26 @@ public:
 
 		if (mesh->mMaterialIndex >= 0) {
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-			cout << "for this mesh-----------" << endl;
-			int metalRougness = material->GetTextureCount(aiTextureType_GLTF_METALLIC_ROUGHNESS);
-			cout << "there are " << metalRougness << "metallic/roughness textures" << endl;
+			// cout << "for this mesh-----------" << endl;
+			// int metalRougness = material->GetTextureCount(aiTextureType_GLTF_METALLIC_ROUGHNESS);
+			// cout << "there are " << metalRougness << "metallic/roughness textures" << endl;
 
-			int ao = material->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION);
-			cout << "there are " << ao << "ao textures" << endl;
+			// int ao = material->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION);
+			// cout << "there are " << ao << "ao textures" << endl;
 
-			int n = material->GetTextureCount(aiTextureType_NORMALS);
-			cout << "there are " << n << "normal textures" << endl;
+			// int n = material->GetTextureCount(aiTextureType_NORMALS);
+			// cout << "there are " << n << "normal textures" << endl;
 
-			int d = material->GetTextureCount(aiTextureType_DIFFUSE);
-			cout << "there are " << d << "diffuse textures" << endl;
+			// int d = material->GetTextureCount(aiTextureType_DIFFUSE);
+			// cout << "there are " << d << "diffuse textures" << endl;
 
-			int s = material->GetTextureCount(aiTextureType_SPECULAR);
-			cout << "there are " << s << "specular textures" << endl;
+			// int s = material->GetTextureCount(aiTextureType_SPECULAR);
+			// cout << "there are " << s << "specular textures" << endl;
 			
-			float t = 0.0f;
-			material->Get(AI_MATKEY_METALLIC_FACTOR, t);
-			cout << "metallic factor scalar" << t << endl;
-			cout << "-----" << endl;
+			// float t = 0.0f;
+			// material->Get(AI_MATKEY_METALLIC_FACTOR, t);
+			// cout << "metallic factor scalar" << t << endl;
+			// cout << "-----" << endl;
 
 			vector<Texture_> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
 			textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());

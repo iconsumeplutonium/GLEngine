@@ -190,7 +190,7 @@ int main(void) {
 			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(DirLightGPUStruct), &dl);
 		};
 
-		baseOffset += MAX_SPOTLIGHTS * sizeof(DirLightGPUStruct);
+		baseOffset += MAX_DIR_LIGHTS * sizeof(DirLightGPUStruct);
 		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numPointLights);
 		baseOffset += sizeof(int);
 		glBufferSubData(GL_UNIFORM_BUFFER, baseOffset, sizeof(int), &numSpotlights);
